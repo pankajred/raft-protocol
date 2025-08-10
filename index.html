@@ -1,0 +1,118 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Raft Protocol — Full Guide (Single Page)</title>
+<style>
+  :root { --bg:#f3f4f6; --card:#ffffff; --accent:#0ea5e9; --muted:#6b7280; }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial;background:var(--bg);color:#0f172a;}
+  header{position:sticky;top:0;background:#0b1220;color:white;z-index:20;padding:12px 18px;display:flex;align-items:center;justify-content:space-between}
+  header .brand{font-weight:700}
+  nav a{color:white;margin-left:12px;text-decoration:none;font-weight:600;opacity:0.95}
+  nav a:hover{text-decoration:underline}
+  .container{max-width:1000px;margin:24px auto;padding:0 18px}
+  section{background:var(--card);padding:20px;border-radius:10px;box-shadow:0 6px 18px rgba(15,23,42,0.06);margin-bottom:18px}
+  h1,h2{margin:0 0 12px 0}
+  img{display:block;width:100%;height:auto;margin:12px 0;border-radius:8px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  pre{background:#0b1220;color:#d1fae5;padding:12px;border-radius:8px;overflow:auto}
+  .muted{color:var(--muted)}
+  .toc{display:flex;gap:8px;flex-wrap:wrap}
+  a.button{background:var(--accent);color:white;padding:8px 12px;border-radius:8px;text-decoration:none;font-weight:600}
+  footer{padding:18px;text-align:center;color:var(--muted)}
+  /* smooth scroll */
+  html{scroll-behavior:smooth}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Raft Protocol — Guide</div>
+  <nav>
+    <a href="#overview">Overview</a>
+    <a href="#leader">Leader Election</a>
+    <a href="#replication">Log Replication</a>
+    <a href="#safety">Safety</a>
+    <a href="#qna">Q&A</a>
+  </nav>
+</header>
+
+<div class="container">
+  <section id="overview">
+    <h1>Overview</h1>
+    <p class="muted">A single-page interactive guide to the Raft consensus algorithm. Use the top navigation to jump between sections.</p>
+    <div class="grid">
+      <div>
+        <h3>What is Raft?</h3>
+        <p>Raft is a leader-based consensus algorithm designed for understandability. It splits consensus into Leader Election, Log Replication, and Safety guarantees.</p>
+        <p class="muted">Used in production systems like etcd and CockroachDB.</p>
+      </div>
+      <div>
+        <h3>Quick links</h3>
+        <div class="toc">
+          <a class="button" href="#leader">Leader Election</a>
+          <a class="button" href="#replication">Replication</a>
+          <a class="button" href="#safety">Safety</a>
+        </div>
+      </div>
+    </div>
+    
+  </section>
+
+  <section id="leader">
+    <h2>Leader Election</h2>
+    <p>Followers expect periodic heartbeats. If no heartbeat arrives within a randomized election timeout, a follower becomes a candidate, increments its term, votes for itself, and requests votes from others. A candidate wins when it receives votes from a majority.</p>
+    
+    <h4>Step‑through</h4>
+    <pre id="leaderSteps">1) Followers start and wait for heartbeat
+2) Follower times out → candidate, starts election
+3) Candidate sends RequestVote(term, lastLogIndex, lastLogTerm)
+4) If majority votes → becomes leader and sends heartbeats</pre>
+  </section>
+
+  <section id="replication">
+    <h2>Log Replication</h2>
+    <p>The leader handles client commands, appends them to its log, and sends AppendEntries RPCs to followers. When a majority persist the entry, the leader marks it committed and applies it to its state machine.</p>
+    
+    <h4>Pseudocode (AppendEntries)</h4>
+    <pre>AppendEntries(term, leaderId, prevLogIndex, prevLogTerm, entries[], leaderCommit):
+  if term < currentTerm: reply false
+  if log doesn't contain an entry at prevLogIndex whose term matches prevLogTerm: reply false
+  else: delete conflicting entries; append new entries; if leaderCommit > commitIndex: commitIndex = min(leaderCommit, index of last new entry)
+  reply true</pre>
+  </section>
+
+  <section id="safety">
+    <h2>Safety & Guarantees</h2>
+    <p>Raft ensures:</p>
+    <ul>
+      <li><strong>Election restriction</strong> — only candidates with up-to-date logs can be elected.</li>
+      <li><strong>Log matching</strong> — if two logs have an entry with same index and term, they are identical up to that index.</li>
+      <li><strong>Leader completeness</strong> — committed entries are preserved in future leaders.</li>
+    </ul>
+    
+    <details><summary>Advanced: Joint consensus and membership changes</summary>
+      <p>To change cluster membership, Raft uses a transitional joint configuration (old+new) to ensure quorum safety during the transition.</p>
+    </details>
+  </section>
+
+  <section id="qna">
+    <h2>In‑depth Questions & Answers</h2>
+    <h4>Q: What happens when the leader fails?</h4>
+    <p>A: Followers start elections when they don't hear heartbeats; a new leader is elected by majority.</p>
+    <h4>Q: How does Raft prevent split‑brain?</h4>
+    <p>A: Randomized election timeouts and majority voting ensure only one leader per term can be elected.</p>
+    <h4>Q: When should InstallSnapshot be used?</h4>
+    <p>A: When logs are compacted and a follower is too far behind, the leader sends an InstallSnapshot RPC.</p>
+    <p class="muted">For more questions, see the repository or ask me — I can expand this Q&A or turn each answer into an interactive tutorial.</p>
+  </section>
+
+  <footer>
+    <p>Made with ❤️ — Raft Guide • Downloadable and GitHub Pages–ready.</p>
+  </footer>
+</div>
+
+</body>
+</html>
