@@ -813,6 +813,29 @@ summary:hover {
   font: inherit;
 }
 
+.search-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+}
+
+.search-button {
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: linear-gradient(135deg, var(--rust), var(--gold));
+  color: #fff8f1;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.search-clear {
+  background: rgba(255, 248, 237, 0.9);
+  color: var(--ink);
+}
+
 .search-input:focus {
   outline: 2px solid rgba(180, 77, 33, 0.24);
   border-color: rgba(180, 77, 33, 0.3);
@@ -982,6 +1005,10 @@ summary:hover {
   .tablet-board,
   .diagram-sequence,
   .lane-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .search-row {
     grid-template-columns: 1fr;
   }
 }

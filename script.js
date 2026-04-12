@@ -2,6 +2,8 @@ const filterButtons = document.querySelectorAll(".filter-pill");
 const faqItems = document.querySelectorAll(".faq-item");
 const searchInput = document.getElementById("faq-search");
 const searchStatus = document.getElementById("faq-search-status");
+const searchForm = document.getElementById("faq-search-form");
+const clearButton = document.getElementById("faq-clear");
 let activeFilter = "all";
 
 const stopWords = new Set([
@@ -76,9 +78,10 @@ function matchesSearch(item, query) {
   );
 }
 
-function applyFilters() {
+function applyFilters(scrollToFirst = false) {
   const query = (searchInput?.value || "").trim().toLowerCase();
   let visibleCount = 0;
+  let firstVisibleItem = null;
 
   faqItems.forEach((item) => {
     const topic = item.dataset.topic;
@@ -90,6 +93,9 @@ function applyFilters() {
 
     if (!item.hidden) {
       visibleCount += 1;
+      if (!firstVisibleItem) {
+        firstVisibleItem = item;
+      }
     }
   });
 
@@ -106,6 +112,10 @@ function applyFilters() {
     searchStatus.textContent =
       "Search across questions and answers to quickly find the topic you need.";
   }
+
+  if (scrollToFirst && firstVisibleItem) {
+    firstVisibleItem.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 }
 
 filterButtons.forEach((button) => {
@@ -118,6 +128,18 @@ filterButtons.forEach((button) => {
   });
 });
 
-searchInput?.addEventListener("input", applyFilters);
+searchInput?.addEventListener("input", () => applyFilters(false));
+
+searchForm?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  applyFilters(true);
+});
+
+clearButton?.addEventListener("click", () => {
+  if (searchInput) {
+    searchInput.value = "";
+  }
+  applyFilters(false);
+});
 
 applyFilters();

@@ -478,6 +478,12 @@
           <div class="section-heading">
             <p class="kicker">Network Partition Scenarios</p>
             <h2>What actually happens when the network gets weird.</h2>
+            <p>
+              Re-verified against the Raft paper: progress depends on a majority
+              being available. Safety does not depend on timing, but
+              availability does. That is why partitions mainly affect who can
+              still reach quorum.
+            </p>
           </div>
 
           <div class="scenario-grid">
@@ -485,9 +491,9 @@
               <h3>Leader isolated in minority partition</h3>
               <p>
                 The old leader cannot commit new entries because it cannot
-                gather a majority. The majority side eventually elects a new
-                leader. Once links recover, the old leader sees a higher term
-                and steps down.
+                gather a majority. The majority side can elect a new leader and
+                continue. Any entries accepted only on the minority side remain
+                uncommitted and may be rolled back during log repair.
               </p>
             </article>
             <article class="scenario-card">
@@ -512,6 +518,15 @@
                 One node might hear from another while replies do not make it
                 back. Raft still converges because terms and quorum rules are
                 based on successful round trips, not one-way reachability.
+              </p>
+            </article>
+            <article class="scenario-card">
+              <h3>No side has quorum</h3>
+              <p>
+                If the network breaks the cluster into groups that are all too
+                small to hold a majority, no leader can safely commit new
+                writes. The cluster becomes unavailable for progress until
+                quorum is restored.
               </p>
             </article>
           </div>
@@ -556,6 +571,12 @@
           <div class="section-heading">
             <p class="kicker">Raft vs Paxos Comparison</p>
             <h2>Same safety goals, different teaching and operating experience.</h2>
+            <p>
+              Re-verified against the Raft project site: Raft is presented as
+              equivalent to Paxos in fault-tolerance and performance, but
+              decomposed into clearer subproblems so it is easier to understand
+              and implement.
+            </p>
           </div>
 
           <div class="comparison-table" role="table" aria-label="Raft versus Paxos">
@@ -565,23 +586,23 @@
 
             <div class="table-cell">Mental model</div>
             <div class="table-cell">Leader-centric, decomposed into elections, replication, safety.</div>
-            <div class="table-cell">Protocol family with proposer, acceptor, learner roles; harder to teach directly.</div>
+            <div class="table-cell">Often taught through proposer, acceptor, and learner roles, with more conceptual overhead for many engineers.</div>
 
             <div class="table-cell">Readability</div>
             <div class="table-cell">Designed for understandability and implementation clarity.</div>
-            <div class="table-cell">Historically seen as more mathematically compact but less intuitive operationally.</div>
+            <div class="table-cell">Historically influential and rigorous, but usually considered harder to teach and map into production intuition.</div>
 
-            <div class="table-cell">Common deployment</div>
-            <div class="table-cell">Widely used in etcd, Consul, TiKV-inspired systems, and educational material.</div>
-            <div class="table-cell">Variants appear in Spanner-like and Multi-Paxos systems, often deeply optimized.</div>
+            <div class="table-cell">Fault tolerance / performance</div>
+            <div class="table-cell">Raft project materials describe it as equivalent to Paxos in these goals.</div>
+            <div class="table-cell">Baseline reference point for consensus safety and performance discussions.</div>
 
-            <div class="table-cell">Operational intuition</div>
-            <div class="table-cell">Easier to explain leader change, log repair, and commit rules.</div>
-            <div class="table-cell">Requires more care to map theory to production behavior.</div>
+            <div class="table-cell">Design style</div>
+            <div class="table-cell">Breaks consensus into understandable pieces that fit practical systems.</div>
+            <div class="table-cell">Often discussed as a protocol family with multiple practical variants such as Multi-Paxos.</div>
 
             <div class="table-cell">Bottom line</div>
             <div class="table-cell">Great when teams want a clear consensus model and debuggable leader workflow.</div>
-            <div class="table-cell">Great when teams inherit Paxos ecosystems or need specific variants and proofs.</div>
+            <div class="table-cell">Essential historically and still important, but usually less approachable for onboarding and system explanation.</div>
           </div>
         </section>
 
@@ -824,18 +845,22 @@
             <h2>Common questions people ask, from beginner to deep technical.</h2>
           </div>
 
-          <div class="search-panel">
+          <form class="search-panel" id="faq-search-form">
             <label class="search-label" for="faq-search">Ask a question</label>
-            <input
-              id="faq-search"
-              class="search-input"
-              type="search"
-              placeholder="Try: how does leader election work, split-brain, yugabyte tablet leader..."
-            />
+            <div class="search-row">
+              <input
+                id="faq-search"
+                class="search-input"
+                type="search"
+                placeholder="Try: how does leader election work, split-brain, yugabyte tablet leader..."
+              />
+              <button class="search-button" type="submit">Search</button>
+              <button class="search-button search-clear" id="faq-clear" type="button">Clear</button>
+            </div>
             <p class="search-help" id="faq-search-status">
               Search across questions and answers to quickly find the topic you need.
             </p>
-          </div>
+          </form>
 
           <div class="filter-bar">
             <button class="filter-pill is-active" data-filter="all">All</button>
