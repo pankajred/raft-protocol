@@ -845,23 +845,6 @@
             <h2>Common questions people ask, from beginner to deep technical.</h2>
           </div>
 
-          <form class="search-panel" id="faq-search-form">
-            <label class="search-label" for="faq-search">Ask a question</label>
-            <div class="search-row">
-              <input
-                id="faq-search"
-                class="search-input"
-                type="search"
-                placeholder="Try: how does leader election work, split-brain, yugabyte tablet leader..."
-              />
-              <button class="search-button" type="submit">Search</button>
-              <button class="search-button search-clear" id="faq-clear" type="button">Clear</button>
-            </div>
-            <p class="search-help" id="faq-search-status">
-              Search across questions and answers to quickly find the topic you need.
-            </p>
-          </form>
-
           <div class="filter-bar">
             <button class="filter-pill is-active" data-filter="all">All</button>
             <button class="filter-pill" data-filter="fundamentals">Fundamentals</button>
@@ -1077,6 +1060,81 @@
               <summary>How do you explain why Raft is important to management?</summary>
               <p>Raft is important because it turns a cluster of machines into a coordinated system with predictable failover and lower corruption risk. It adds coordination cost, but it dramatically improves correctness and confidence during failures.</p>
             </details>
+          </div>
+        </section>
+
+        <section class="section accent-section" id="systems-qa">
+          <div class="section-heading">
+            <p class="kicker">Raft In Real Systems</p>
+            <h2>More product-specific Raft questions, without repeating the basic ones.</h2>
+            <p>
+              This section focuses on how real systems use Raft differently:
+              manager quorum, shard leaders, per-channel ordering, metadata
+              safety, and operational consequences when quorum is lost.
+            </p>
+          </div>
+
+          <div class="systems-grid">
+            <article class="system-card">
+              <h3><a href="https://github.com/etcd-io/etcd" target="_blank" rel="noreferrer">etcd</a></h3>
+              <p class="system-question">Raft-specific question: why does etcd quorum loss immediately threaten control-plane coordination?</p>
+              <p>Because etcd stores strongly consistent cluster metadata. If a majority of etcd voters is unavailable, leader election and safe writes stop, which blocks new consensus-backed updates.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://developer.hashicorp.com/consul/docs/concept/consensus" target="_blank" rel="noreferrer">HashiCorp Consul</a></h3>
+              <p class="system-question">Raft-specific question: why should Consul server counts stay odd?</p>
+              <p>Consul's Raft servers need quorum for safe catalog and coordination updates. Odd counts maximize failure tolerance per server added and avoid wasting a voter on tie-prone even sizing.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://developer.hashicorp.com/nomad/docs/architecture/cluster/consensus" target="_blank" rel="noreferrer">HashiCorp Nomad</a></h3>
+              <p class="system-question">Raft-specific question: what breaks first in Nomad when the server quorum is unstable?</p>
+              <p>Scheduling decisions and cluster state updates become unreliable because the servers cannot maintain a stable leader long enough to commit authoritative plan changes.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://rqlite.io/docs/design/" target="_blank" rel="noreferrer">rqlite</a></h3>
+              <p class="system-question">Raft-specific question: what does Raft buy rqlite beyond plain SQLite replication?</p>
+              <p>It gives SQLite a replicated write path with one leader and majority-backed commit, so the database can survive node failures without inventing a custom consistency layer.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://www.yugabyte.com/key-concepts/raft-consensus-algorithm/" target="_blank" rel="noreferrer">YugabyteDB</a></h3>
+              <p class="system-question">Raft-specific question: why is tablet leader distribution a first-class tuning concern in YugabyteDB?</p>
+              <p>Because Raft leadership is per tablet. If too many hot tablet leaders accumulate on one tserver, write coordination hotspots appear even when replica counts look balanced.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://www.cockroachlabs.com/resources/the-raft-protocol-explained-via-sql-database-cockroachdb-consensus-protocol/" target="_blank" rel="noreferrer">CockroachDB</a></h3>
+              <p class="system-question">Raft-specific question: why does CockroachDB need many Raft leaders instead of one?</p>
+              <p>Because data is split into ranges, each with its own Raft group. Horizontal scale comes from many independent leaders managing many independent replicated logs.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://docs.dgraph.io/design-concepts/raft/" target="_blank" rel="noreferrer">Dgraph</a></h3>
+              <p class="system-question">Raft-specific question: what is the operational lesson from Dgraph using multiple Raft groups?</p>
+              <p>Not all distributed systems use one global consensus stream. Like other sharded designs, Dgraph spreads work across groups, so leadership locality and group health both matter.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://tikv.org/docs/4.0/concepts/architecture/" target="_blank" rel="noreferrer">TiKV</a></h3>
+              <p class="system-question">Raft-specific question: why does TiKV talk so much about Regions and peers in Raft terms?</p>
+              <p>Because each Region is replicated by a Raft group. Operationally, understanding peer health and Region leader placement is essential to understanding TiKV write behavior.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://github.com/moby/swarmkit" target="_blank" rel="noreferrer">SwarmKit</a></h3>
+              <p class="system-question">Raft-specific question: why do Docker Swarm managers care so much about quorum?</p>
+              <p>Manager nodes rely on Raft to maintain the authoritative cluster state. Lose manager quorum and the swarm cannot safely accept new state transitions.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/" target="_blank" rel="noreferrer">Kubernetes (via etcd)</a></h3>
+              <p class="system-question">Raft-specific question: how does etcd's Raft health show up as a Kubernetes problem?</p>
+              <p>If etcd loses quorum or thrashes leaders, the API server loses a stable backing store for control-plane state. The result looks like Kubernetes instability even though the root issue is etcd consensus.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://hyperledger-fabric.readthedocs.io/en/latest/orderer/ordering_service.html" target="_blank" rel="noreferrer">Hyperledger Fabric</a></h3>
+              <p class="system-question">Raft-specific question: why is Raft per channel important in Hyperledger Fabric?</p>
+              <p>Fabric runs a separate Raft instance per channel, which allows different leaders and ordering paths per channel instead of forcing one global ordering leader for everything.</p>
+            </article>
+            <article class="system-card">
+              <h3><a href="https://tikv.org/blog/implement-raft-in-rust/" target="_blank" rel="noreferrer">TiKV (Rust)</a></h3>
+              <p class="system-question">Raft-specific question: why does a Rust Raft implementation matter operationally?</p>
+              <p>In systems like TiKV, consensus code is on the write path. Rust matters because teams want strong systems-level performance and memory safety in the core replication engine.</p>
+            </article>
           </div>
         </section>
 
