@@ -126,6 +126,18 @@ body::before {
   color: var(--rust);
 }
 
+.hero-link {
+  font-family: "Instrument Serif", serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--rust);
+  text-decoration: none;
+}
+
+.hero-link:hover {
+  text-decoration: underline;
+}
+
 .hero-text,
 .section-heading p,
 .info-card p,
@@ -624,6 +636,42 @@ summary:hover {
 .tool-grid a:hover {
   transform: translateY(-2px);
   background: rgba(255, 248, 237, 0.9);
+}
+
+.search-panel {
+  padding: 18px;
+  margin-bottom: 18px;
+  border-radius: 24px;
+  border: 1px solid var(--line);
+  background: rgba(255, 248, 237, 0.82);
+  box-shadow: var(--shadow);
+}
+
+.search-label {
+  display: block;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.search-input {
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--ink);
+  font: inherit;
+}
+
+.search-input:focus {
+  outline: 2px solid rgba(180, 77, 33, 0.24);
+  border-color: rgba(180, 77, 33, 0.3);
+}
+
+.search-help {
+  margin: 10px 0 0;
+  color: var(--muted);
 }
 
 .filter-bar {
