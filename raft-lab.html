@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raft Lab | Guided Explainer</title>
+    <meta
+      name="description"
+      content="A guided Raft explainer subpage with step-by-step leader election and log replication scenes."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./raft-lab.css" />
+  </head>
+  <body>
+    <div class="page-shell lab-shell">
+      <header class="hero lab-hero">
+        <nav class="topbar">
+          <a class="brand" href="./index.html">Raft Field Guide</a>
+          <div class="topbar-links">
+            <a href="./index.html#overview">Main Guide</a>
+            <a href="#lab">Lab</a>
+            <a href="#scenes">Scenes</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Guided Subpage</p>
+            <h1>Raft <span>Lab</span> that explains consensus in plain English.</h1>
+            <p class="hero-text">
+              This page is designed for people who are new to Raft and for people
+              who need the deeper details. Click through guided scenes to see
+              heartbeats, elections, quorum, commit rules, partition recovery,
+              and how YugabyteDB uses many Raft groups at the tablet level.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#lab">Start the Lab</a>
+              <a class="button button-secondary" href="#one-minute">Read the 1-minute version</a>
+              <a class="button button-secondary" href="./index.html">Back to Main Page</a>
+            </div>
+          </div>
+
+          <div class="hero-panel lab-panel">
+            <div class="status-ribbon">Interactive-style explainer</div>
+            <div class="lab-mini-map">
+              <span class="is-current">1</span>
+              <span>2</span>
+              <span>3</span>
+              <span>4</span>
+              <span>5</span>
+            </div>
+            <p>
+              The goal here is to make the protocol feel human: one leader at a
+              time, majority agreement before commit, and fast failover without
+              corrupting history.
+            </p>
+            <div class="hero-badges">
+              <span>Simple explanations</span>
+              <span>Verified details</span>
+              <span>Interview-ready</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main id="lab">
+        <section class="section" id="one-minute">
+          <div class="section-heading">
+            <p class="kicker">Raft In One Minute</p>
+            <h2>If you remember only a few ideas, remember these.</h2>
+          </div>
+
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>1. One leader speaks for the group</h3>
+              <p>Clients send writes to the leader. Followers mostly copy what the leader says. This keeps ordering simple.</p>
+            </article>
+            <article class="info-card">
+              <h3>2. Majority means safety</h3>
+              <p>An entry is not safely committed just because one machine wrote it. It becomes committed only after a majority agrees.</p>
+            </article>
+            <article class="info-card">
+              <h3>3. Elections repair failure</h3>
+              <p>If followers stop hearing from the leader, one starts an election. The cluster picks a new leader and continues.</p>
+            </article>
+          </div>
+
+          <div class="card-grid three-up simple-grid">
+            <article class="info-card">
+              <h3>4. Old leaders must give up</h3>
+              <p>If a server sees a higher term, it steps down. This is one of the key reasons Raft avoids split-brain commits.</p>
+            </article>
+            <article class="info-card">
+              <h3>5. The log is the shared memory</h3>
+              <p>The replicated log is the ordered history of decisions. Every healthy node should converge to the same committed log.</p>
+            </article>
+            <article class="info-card">
+              <h3>6. YugabyteDB scales with many leaders</h3>
+              <p>YugabyteDB does not use one cluster-wide Raft leader. Each tablet has its own Raft leader, so work spreads across the cluster.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <p class="kicker">Guided Flow</p>
+            <h2>Walk through the protocol in five detailed scenes.</h2>
+            <p>
+              Each scene has a simple explanation, a more technical explanation,
+              and the operational lesson to remember. The details here were
+              re-checked against the Raft project site, the Raft algorithm
+              summary on Wikipedia, and YugabyteDB documentation.
+            </p>
+          </div>
+
+          <div class="lab-layout" id="scenes">
+            <aside class="scene-list">
+              <button class="scene-tab is-active" data-scene="0">1. Follower timeout</button>
+              <button class="scene-tab" data-scene="1">2. Candidate asks for votes</button>
+              <button class="scene-tab" data-scene="2">3. Leader replicates and commits</button>
+              <button class="scene-tab" data-scene="3">4. Partition and recovery</button>
+              <button class="scene-tab" data-scene="4">5. Yugabyte tablet leaders</button>
+            </aside>
+
+            <section class="scene-stage">
+              <div class="scene-copy">
+                <p class="kicker" id="scene-kicker">Scene 1</p>
+                <h2 id="scene-title">Follower timeout starts a new term.</h2>
+                <p class="scene-simple" id="scene-simple">
+                  Plain English: if the current leader goes quiet for too long,
+                  one follower says, “I think the leader is gone. Let’s vote for
+                  a new one.”
+                </p>
+                <p id="scene-description">
+                  A follower stops hearing heartbeats within its randomized election
+                  timeout, increments the term, votes for itself, and becomes a
+                  candidate.
+                </p>
+                <div class="scene-facts" id="scene-facts">
+                  <span>Randomized timeout</span>
+                  <span>Self-vote</span>
+                  <span>New term</span>
+                </div>
+                <div class="scene-detail-grid">
+                  <article class="scene-detail-card">
+                    <h3>What happens</h3>
+                    <p id="scene-what-happens">
+                      The follower starts a new election because it no longer
+                      trusts that a current leader is alive.
+                    </p>
+                  </article>
+                  <article class="scene-detail-card">
+                    <h3>Why it matters</h3>
+                    <p id="scene-why-matters">
+                      Fast leader replacement improves availability, but the
+                      random timeout reduces the chance that everyone starts an
+                      election at the same moment.
+                    </p>
+                  </article>
+                  <article class="scene-detail-card">
+                    <h3>Interview answer</h3>
+                    <p id="scene-interview">
+                      Randomized election timeout helps resolve split votes and
+                      stabilize leader selection.
+                    </p>
+                  </article>
+                </div>
+              </div>
+
+              <div class="scene-visual">
+                <div class="scene-banner" id="scene-banner">Heartbeat missing</div>
+                <div class="lab-cluster" id="lab-cluster">
+                  <div class="lab-node" data-node="A">
+                    <strong>A</strong>
+                    <span>Follower</span>
+                    <small>term 7</small>
+                  </div>
+                  <div class="lab-node" data-node="B">
+                    <strong>B</strong>
+                    <span>Follower</span>
+                    <small>term 7</small>
+                  </div>
+                  <div class="lab-node" data-node="C">
+                    <strong>C</strong>
+                    <span>Follower</span>
+                    <small>term 7</small>
+                  </div>
+                </div>
+                <div class="message-row" id="message-row">
+                  <span>heartbeat missing</span>
+                  <span>election timer fires</span>
+                  <span>RequestVote begins</span>
+                </div>
+                <div class="log-strip" id="log-strip">
+                  <div class="log-box">
+                    <strong>A log</strong>
+                    <span>[1][2][3]</span>
+                  </div>
+                  <div class="log-box">
+                    <strong>B log</strong>
+                    <span>[1][2][3]</span>
+                  </div>
+                  <div class="log-box">
+                    <strong>C log</strong>
+                    <span>[1][2][3]</span>
+                  </div>
+                </div>
+                <div class="scene-caption" id="scene-caption">
+                  No leader heartbeat arrives in time, so one node advances the election.
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="section accent-section">
+          <div class="section-heading">
+            <p class="kicker">Simple Mental Model</p>
+            <h2>Think of Raft like a careful team taking notes together.</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Leader</h3>
+              <p>The leader is the current coordinator. It receives requests, writes them to the shared history, and asks others to confirm.</p>
+            </article>
+            <article class="info-card">
+              <h3>Followers</h3>
+              <p>Followers are the witnesses. They copy the leader’s history and can quickly take over if the leader disappears.</p>
+            </article>
+            <article class="info-card">
+              <h3>Quorum</h3>
+              <p>A majority is the “enough people agree” rule. If most of the group has confirmed an entry, a future leader will preserve it.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section accent-section">
+          <div class="section-heading">
+            <p class="kicker">How To Use This</p>
+            <h2>This subpage is meant for presentations, study sessions, and interview prep.</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>For teaching</h3>
+              <p>Use the scenes to narrate exactly how a follower becomes candidate, how quorum works, and why stale leaders cannot safely continue writing.</p>
+            </article>
+            <article class="info-card">
+              <h3>For interviews</h3>
+              <p>Pause on scene 4 to talk through minority partitions, stale leaders, and why Raft chooses safety over write availability without quorum.</p>
+            </article>
+            <article class="info-card">
+              <h3>For YugabyteDB</h3>
+              <p>Use scene 5 to explain that the database scales through many tablet Raft groups and leader balancing rather than a single global leader.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
+            <p class="kicker">Common Confusions</p>
+            <h2>Things people often get wrong about Raft.</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Replicated is not the same as committed</h3>
+              <p>An entry can exist on several nodes and still not be safely committed. Commitment requires Raft’s quorum rules.</p>
+            </article>
+            <article class="info-card">
+              <h3>Two leaders may appear briefly</h3>
+              <p>During a partition, two nodes may both think they are leader. The key safety point is that conflicting commits still require a majority, so the minority side cannot safely finalize writes.</p>
+            </article>
+            <article class="info-card">
+              <h3>Raft is not Byzantine fault tolerant</h3>
+              <p>Raft handles crashes, restarts, and message delays, but it assumes the participating servers are not malicious.</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section accent-section">
+          <div class="section-heading">
+            <p class="kicker">Verification Notes</p>
+            <h2>The content on this page was re-checked before this revision.</h2>
+            <p>
+              Verified facts used here include: Raft is designed for
+              understandability, progress depends on a majority, leaders are
+              elected after missed heartbeats, voters grant one vote per term,
+              candidates need up-to-date logs, joint consensus is used for safe
+              membership changes, log compaction uses snapshots, and YugabyteDB
+              applies Raft per tablet rather than one global cluster log.
+            </p>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Raft Project</h3>
+              <p><a href="https://raft.github.io/" target="_blank" rel="noreferrer">raft.github.io</a></p>
+            </article>
+            <article class="info-card">
+              <h3>Wikipedia Summary</h3>
+              <p><a href="https://en.wikipedia.org/wiki/Raft_(algorithm)" target="_blank" rel="noreferrer">Raft (algorithm)</a></p>
+            </article>
+            <article class="info-card">
+              <h3>YugabyteDB Docs</h3>
+              <p><a href="https://docs.yugabyte.com/latest/architecture/docdb-replication/replication/" target="_blank" rel="noreferrer">Replication in DocDB</a></p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./raft-lab.js"></script>
+  </body>
+</html>

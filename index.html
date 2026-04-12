@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raft Protocol Field Guide</title>
+    <meta
+      name="description"
+      content="A practical visual guide to Raft consensus, network partitions, split-brain prevention, Figure-8 safety, and YugabyteDB's Raft-based architecture."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero" id="top">
+        <nav class="topbar">
+          <a class="brand" href="#top">Raft Field Guide</a>
+          <div class="topbar-links">
+            <a href="#overview">Overview</a>
+            <a href="#diagrams">Diagrams</a>
+            <a href="#yugabyte">YugabyteDB</a>
+            <a href="#qa">Q&amp;A</a>
+            <a href="./raft-lab.html">Raft Lab</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Distributed Systems • Consensus • Operations</p>
+            <h1>
+              Understand <span>Raft</span> the way engineers, interviewers, and
+              managers actually ask about it.
+            </h1>
+            <p class="hero-text">
+              This site turns Raft from an abstract consensus algorithm into a
+              practical operating model. It covers elections, replication,
+              partitions, split-brain prevention, the famous Figure-8 safety
+              scenario, and how YugabyteDB applies Raft to tablets in
+              production.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="#overview">Start Learning</a>
+              <a class="button button-secondary" href="#qa">Jump to Questions</a>
+              <a class="button button-secondary" href="./raft-lab.html">Open Guided Lab</a>
+            </div>
+          </div>
+
+          <div class="hero-panel">
+            <div class="cluster-card">
+              <div class="cluster-label">3-node Raft group</div>
+              <div class="cluster-visual">
+                <div class="node node-leader">
+                  <span class="node-name">A</span>
+                  <span class="node-role">Leader</span>
+                </div>
+                <div class="node node-follower">
+                  <span class="node-name">B</span>
+                  <span class="node-role">Follower</span>
+                </div>
+                <div class="node node-follower">
+                  <span class="node-name">C</span>
+                  <span class="node-role">Follower</span>
+                </div>
+              </div>
+              <div class="pulse-lines">
+                <span></span>
+                <span></span>
+              </div>
+              <div class="cluster-notes">
+                <div>
+                  <strong>Term:</strong> 42
+                </div>
+                <div>
+                  <strong>Quorum:</strong> 2 of 3
+                </div>
+                <div>
+                  <strong>Committed:</strong> entry 9
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="section accent-section" id="importance">
+          <div class="section-heading">
+            <p class="kicker">Why Raft Matters</p>
+            <h2>Raft is important because many real systems depend on leader election plus safe majority commits.</h2>
+            <p>
+              Raft is not just a classroom algorithm. It became influential
+              because it is easier to explain than Paxos while still giving
+              strong safety guarantees for replicated state machines. A lot of
+              modern infrastructure either uses Raft directly or relies on a
+              storage/control-plane component that does.
+            </p>
+          </div>
+
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Why Engineers Care</h3>
+              <ul class="check-list">
+                <li>It gives a clean mental model for fault-tolerant writes.</li>
+                <li>It uses majority quorums to avoid unsafe split-brain commits.</li>
+                <li>It separates elections, replication, and safety clearly.</li>
+                <li>It makes debugging leadership changes easier than many alternatives.</li>
+              </ul>
+            </article>
+            <article class="info-card">
+              <h3>Why Companies Care</h3>
+              <ul class="check-list">
+                <li>Predictable failover improves operational confidence.</li>
+                <li>Committed history survives crashes and leader changes.</li>
+                <li>Strong consistency helps protect metadata, coordination, and database writes.</li>
+                <li>It is widely battle-tested across distributed infrastructure.</li>
+              </ul>
+            </article>
+            <article class="info-card">
+              <h3>Why It Became Popular</h3>
+              <ul class="check-list">
+                <li>The Raft project explicitly emphasizes understandability.</li>
+                <li>Official YugabyteDB material highlights Raft for leader election and shard-level replication.</li>
+                <li>The ecosystem around the `etcd-io/raft` implementation is especially broad.</li>
+                <li>It is a practical default for strongly consistent control planes.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="split-layout">
+            <article class="panel">
+              <h3>Open Source Systems That Use Raft</h3>
+              <p>
+                This is a <strong>verified, high-signal list</strong>, not a
+                claim to be every project in existence. The examples below come
+                from official project pages, official docs, or the Raft
+                implementation's own repository notes.
+              </p>
+              <div class="tool-grid">
+                <span>etcd</span>
+                <span>HashiCorp Consul</span>
+                <span>HashiCorp Nomad</span>
+                <span>rqlite</span>
+                <span>YugabyteDB</span>
+                <span>CockroachDB</span>
+                <span>Dgraph</span>
+                <span>TiKV</span>
+                <span>SwarmKit</span>
+                <span>Chain Core</span>
+              </div>
+            </article>
+
+            <article class="panel">
+              <h3>What These Projects Use Raft For</h3>
+              <ul class="check-list">
+                <li>`etcd`: consistent metadata and coordination state.</li>
+                <li>`Consul` and `Nomad`: control-plane state, leadership, and scheduling metadata.</li>
+                <li>`rqlite`: replicated SQLite with consensus-backed writes.</li>
+                <li>`YugabyteDB`: per-tablet leader election and replication.</li>
+                <li>Other projects built on `etcd-io/raft`: storage engines, orchestration systems, and network-control components.</li>
+              </ul>
+              <div class="quote-strip source-strip">
+                Verified from official sources including the Raft project site,
+                YugabyteDB docs, rqlite docs, and the `etcd-io/raft` repository
+                ecosystem notes.
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="overview">
+          <div class="section-heading">
+            <p class="kicker">Raft Overview Refresher</p>
+            <h2>Raft reduces consensus into understandable moving parts.</h2>
+            <p>
+              The core idea is simple: elect a single leader, replicate a
+              totally ordered log, and only treat entries as committed once a
+              majority agrees. Everything else exists to preserve that safety
+              under crashes, slow networks, and re-elections.
+            </p>
+          </div>
+
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Roles</h3>
+              <p>
+                Servers begin as followers. A follower that times out starts an
+                election and becomes a candidate. Once it wins a majority, it
+                becomes leader and handles client writes.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Terms</h3>
+              <p>
+                Time is divided into logical terms. Terms only move forward.
+                Seeing a higher term forces a server to step down, which is one
+                of the key split-brain protections.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Quorum</h3>
+              <p>
+                Raft needs a majority to elect a leader and commit writes. That
+                majority intersection ensures two conflicting leaders cannot both
+                commit independent histories in the same configuration.
+              </p>
+            </article>
+          </div>
+
+          <div class="split-layout">
+            <article class="panel">
+              <h3>Log Matching Rules</h3>
+              <ul class="check-list">
+                <li>If two log entries share the same index and term, they are the same command.</li>
+                <li>If two logs contain an entry with the same index and term, all preceding entries are identical.</li>
+                <li>A leader never overwrites or deletes its own committed entries.</li>
+                <li>Followers reject `AppendEntries` if the preceding log index/term does not match.</li>
+                <li>Conflict repair happens by truncating uncommitted divergent suffixes and replaying the leader's version.</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>What Makes Raft Safe</h3>
+              <ul class="check-list">
+                <li>Election restriction: a candidate must have an up-to-date log to win.</li>
+                <li>Commit rule: a current-term entry committed on a majority anchors earlier entries.</li>
+                <li>Leader completeness: committed entries appear in all future leaders.</li>
+                <li>State machine safety: no two servers apply different commands at the same log index.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="card-grid three-up verification-grid">
+            <article class="info-card">
+              <h3>Joint Consensus</h3>
+              <p>
+                After verification, one missing detail worth adding is Raft's
+                membership-change mechanism. Modern explanations call out
+                <strong>joint consensus</strong>, where the cluster temporarily
+                requires majorities from both the old and new configurations to
+                change membership safely.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Log Compaction</h3>
+              <p>
+                Raft is not just elections and replication. Real systems compact
+                old log prefixes into snapshots so lagging followers can catch up
+                without replaying the entire history forever.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Source-Verified Safety</h3>
+              <p>
+                The core safety properties consistently cited by the primary
+                references are election safety, leader append-only, log matching,
+                leader completeness, and state machine safety.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section accent-section" id="diagrams">
+          <div class="section-heading">
+            <p class="kicker">Detailed Diagrams</p>
+            <h2>Visual flow diagrams for leader election, replication, and failure handling.</h2>
+          </div>
+
+          <div class="diagram-stack">
+            <article class="diagram-card">
+              <div class="diagram-copy">
+                <h3>Leader Election Flow Diagram</h3>
+                <p>
+                  Election timeouts are randomized so that one follower likely
+                  times out first, increments its term, votes for itself, and
+                  requests votes from peers.
+                </p>
+              </div>
+              <svg viewBox="0 0 900 260" class="svg-diagram" role="img" aria-label="Leader election flow diagram">
+                <defs>
+                  <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <path d="M0,0 L10,3 L0,6 z" fill="currentColor"></path>
+                  </marker>
+                </defs>
+                <rect x="20" y="40" width="170" height="72" rx="18"></rect>
+                <text x="105" y="72">Follower timeout</text>
+                <text x="105" y="95">no heartbeat seen</text>
+
+                <line x1="190" y1="76" x2="300" y2="76" marker-end="url(#arrow)"></line>
+
+                <rect x="300" y="40" width="170" height="72" rx="18"></rect>
+                <text x="385" y="72">Become candidate</text>
+                <text x="385" y="95">term + 1, self-vote</text>
+
+                <line x1="470" y1="76" x2="600" y2="76" marker-end="url(#arrow)"></line>
+
+                <rect x="600" y="40" width="170" height="72" rx="18"></rect>
+                <text x="685" y="72">RequestVote RPCs</text>
+                <text x="685" y="95">to all peers</text>
+
+                <line x1="685" y1="112" x2="685" y2="178" marker-end="url(#arrow)"></line>
+
+                <rect x="570" y="178" width="230" height="62" rx="18"></rect>
+                <text x="685" y="205">Majority votes received?</text>
+                <text x="685" y="226">Yes: become leader</text>
+
+                <line x1="570" y1="209" x2="468" y2="209" marker-end="url(#arrow)"></line>
+                <text x="500" y="196">No</text>
+                <text x="478" y="227">retry after new timeout</text>
+              </svg>
+            </article>
+
+            <article class="diagram-card">
+              <div class="diagram-copy">
+                <h3>Replication and Commit Flow</h3>
+                <p>
+                  The leader appends the client command locally, ships it to
+                  followers, and marks it committed only after a majority
+                  acknowledges the entry.
+                </p>
+              </div>
+              <div class="replication-flow">
+                <div class="flow-node active">1. Client write hits leader</div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node">2. Leader appends entry</div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node">3. Followers validate `prevLogIndex` and `prevLogTerm`</div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node">4. Majority ACKs</div>
+                <div class="flow-arrow"></div>
+                <div class="flow-node success">5. Commit and apply to state machine</div>
+              </div>
+            </article>
+
+            <article class="diagram-card">
+              <div class="diagram-copy">
+                <h3>Split-Brain Prevention</h3>
+                <p>
+                  Raft avoids true split-brain commits by requiring quorums and
+                  forcing outdated leaders to step down when they observe higher
+                  terms.
+                </p>
+              </div>
+              <div class="brain-grid">
+                <div class="brain-panel">
+                  <h4>Minority side</h4>
+                  <p>Old leader can still send heartbeats locally but cannot commit new writes without a majority.</p>
+                  <div class="mini-cluster">
+                    <span class="mini-node lead">L</span>
+                    <span class="mini-node muted">F</span>
+                    <span class="mini-cross">x</span>
+                  </div>
+                </div>
+                <div class="brain-divider"></div>
+                <div class="brain-panel">
+                  <h4>Majority side</h4>
+                  <p>A new leader can be elected here because it still has quorum. When connectivity returns, the stale leader steps down.</p>
+                  <div class="mini-cluster">
+                    <span class="mini-node healthy">F</span>
+                    <span class="mini-node leader2">N</span>
+                    <span class="mini-node healthy">F</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="scenarios">
+          <div class="section-heading">
+            <p class="kicker">Network Partition Scenarios</p>
+            <h2>What actually happens when the network gets weird.</h2>
+          </div>
+
+          <div class="scenario-grid">
+            <article class="scenario-card">
+              <h3>Leader isolated in minority partition</h3>
+              <p>
+                The old leader cannot commit new entries because it cannot
+                gather a majority. The majority side eventually elects a new
+                leader. Once links recover, the old leader sees a higher term
+                and steps down.
+              </p>
+            </article>
+            <article class="scenario-card">
+              <h3>Follower isolated</h3>
+              <p>
+                The cluster remains available if the remaining nodes still form
+                a quorum. The isolated follower catches up later via log replay
+                or snapshot installation.
+              </p>
+            </article>
+            <article class="scenario-card">
+              <h3>Two-way packet loss with delayed heartbeats</h3>
+              <p>
+                Aggressive timeouts can cause election churn even without a hard
+                partition. Operationally this looks like frequent leader changes
+                and rising tail latency.
+              </p>
+            </article>
+            <article class="scenario-card">
+              <h3>Asymmetric partition</h3>
+              <p>
+                One node might hear from another while replies do not make it
+                back. Raft still converges because terms and quorum rules are
+                based on successful round trips, not one-way reachability.
+              </p>
+            </article>
+          </div>
+
+          <article class="figure-eight panel">
+            <div class="figure-eight-copy">
+              <p class="kicker">Figure-8 Raft Problem</p>
+              <h3>The famous Figure-8 safety scenario</h3>
+              <p>
+                Figure-8 style examples show why Raft is careful about exactly
+                when an entry becomes committed. An entry replicated to many
+                nodes is not automatically safe unless the leader satisfies the
+                commit rule using a current-term entry on a majority.
+              </p>
+              <p>
+                The lesson is subtle but critical: leadership can change several
+                times across partitions and crashes, so the algorithm must
+                preserve safety even when partially replicated, older-term
+                entries exist in multiple places.
+              </p>
+            </div>
+            <div class="figure-eight-visual">
+              <div class="lane">
+                <span>S1</span>
+                <span>S2</span>
+                <span>S3</span>
+                <span>S4</span>
+                <span>S5</span>
+              </div>
+              <div class="curve-band top"></div>
+              <div class="curve-band bottom"></div>
+              <div class="figure-note">
+                Entries from old terms may spread widely, but only a quorum-safe
+                commit rule plus election restriction prevents unsafe overwrite
+                of committed history.
+              </div>
+            </div>
+          </article>
+        </section>
+
+        <section class="section accent-section" id="compare">
+          <div class="section-heading">
+            <p class="kicker">Raft vs Paxos Comparison</p>
+            <h2>Same safety goals, different teaching and operating experience.</h2>
+          </div>
+
+          <div class="comparison-table" role="table" aria-label="Raft versus Paxos">
+            <div class="table-head">Dimension</div>
+            <div class="table-head">Raft</div>
+            <div class="table-head">Paxos</div>
+
+            <div class="table-cell">Mental model</div>
+            <div class="table-cell">Leader-centric, decomposed into elections, replication, safety.</div>
+            <div class="table-cell">Protocol family with proposer, acceptor, learner roles; harder to teach directly.</div>
+
+            <div class="table-cell">Readability</div>
+            <div class="table-cell">Designed for understandability and implementation clarity.</div>
+            <div class="table-cell">Historically seen as more mathematically compact but less intuitive operationally.</div>
+
+            <div class="table-cell">Common deployment</div>
+            <div class="table-cell">Widely used in etcd, Consul, TiKV-inspired systems, and educational material.</div>
+            <div class="table-cell">Variants appear in Spanner-like and Multi-Paxos systems, often deeply optimized.</div>
+
+            <div class="table-cell">Operational intuition</div>
+            <div class="table-cell">Easier to explain leader change, log repair, and commit rules.</div>
+            <div class="table-cell">Requires more care to map theory to production behavior.</div>
+
+            <div class="table-cell">Bottom line</div>
+            <div class="table-cell">Great when teams want a clear consensus model and debuggable leader workflow.</div>
+            <div class="table-cell">Great when teams inherit Paxos ecosystems or need specific variants and proofs.</div>
+          </div>
+        </section>
+
+        <section class="section" id="yugabyte">
+          <div class="section-heading">
+            <p class="kicker">YugabyteDB Architecture Explanation</p>
+            <h2>YugabyteDB uses Raft at the tablet level, not as one giant cluster log.</h2>
+            <p>
+              YugabyteDB splits data into tablets. Each tablet is replicated by
+              its own Raft group, which means the database runs many Raft groups
+              in parallel. This is what enables scale-out leadership and write
+              distribution.
+            </p>
+          </div>
+
+          <div class="split-layout">
+            <article class="panel">
+              <h3>Tablet Raft Groups</h3>
+              <p>
+                Every tablet has a small replica set, usually spread across
+                nodes or zones. That tablet elects its own leader, maintains its
+                own log, and commits independently from other tablets.
+              </p>
+              <div class="tablet-board">
+                <div class="tablet tablet-a">
+                  <strong>Tablet A</strong>
+                  <span>Leader: Node 1</span>
+                </div>
+                <div class="tablet tablet-b">
+                  <strong>Tablet B</strong>
+                  <span>Leader: Node 2</span>
+                </div>
+                <div class="tablet tablet-c">
+                  <strong>Tablet C</strong>
+                  <span>Leader: Node 3</span>
+                </div>
+                <div class="tablet tablet-d">
+                  <strong>Tablet D</strong>
+                  <span>Leader: Node 1</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="panel">
+              <h3>Leader Distribution</h3>
+              <p>
+                Healthy deployments try to spread tablet leaders so one server
+                does not absorb disproportionate write traffic. Poor leader
+                distribution leads to hotspots, queue buildup, and node-level
+                CPU imbalance.
+              </p>
+              <ul class="check-list">
+                <li>Too many leaders on one tserver can create skewed latency.</li>
+                <li>Leader rebalancing improves parallelism and failure tolerance.</li>
+                <li>Placement awareness matters in multi-AZ deployments.</li>
+                <li>Operational teams should monitor leader counts, follower lag, and tablet movement.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>YugabyteDB Raft Implementation</h3>
+              <p>
+                YugabyteDB integrates consensus with tablet servers, WAL
+                replication, snapshots, and placement-aware master metadata. The
+                result is Raft applied repeatedly across shards instead of a
+                single monolithic stream.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Yugabyte-Specific Tuning Flags</h3>
+              <p>
+                Teams often tune heartbeat intervals, election timeouts,
+                background load balancing, RPC concurrency, log retention, and
+                remote bootstrap behavior based on latency and topology.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Operational Troubleshooting</h3>
+              <p>
+                If leaders flap or tablets remain under-replicated, inspect
+                network health, clock skew, disk stalls, consensus queue
+                pressure, and whether one zone is repeatedly losing quorum.
+              </p>
+            </article>
+          </div>
+
+          <article class="panel management-panel">
+            <h3>Explain Raft to Management</h3>
+            <p>
+              Raft is the mechanism that lets a distributed database act like a
+              coordinated system instead of a collection of independent servers.
+              It chooses one writer per shard, waits for a majority before
+              confirming important changes, and keeps working even when some
+              machines fail.
+            </p>
+            <div class="quote-strip">
+              <span>Management talking point:</span>
+              “We trade a small amount of coordination cost for a large increase
+              in correctness, failover predictability, and operational
+              confidence.”
+            </div>
+          </article>
+        </section>
+
+        <section class="section accent-section" id="yugabyte-deep-dive">
+          <div class="section-heading">
+            <p class="kicker">Verified YugabyteDB Deep Dive</p>
+            <h2>More detailed YugabyteDB scenarios and interview answers, aligned to the docs.</h2>
+            <p>
+              The official YugabyteDB docs confirm that tablets are shards, each
+              tablet has one leader plus peers that form a Raft group, and
+              YugabyteDB spreads tablet leaders across nodes to distribute read
+              and write workload. They also note that YugabyteDB's Raft
+              implementation includes enhancements such as leader leases and
+              pre-voting in learner mode.
+            </p>
+          </div>
+
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Scenario: One node becomes leader-heavy</h3>
+              <p>
+                Interview answer: if one tserver owns too many tablet leaders,
+                write coordination concentrates there. Expect hot CPU, more
+                queueing, and uneven latency. YugabyteDB addresses this with
+                leader balancing and broader tablet rebalancing.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Scenario: Tablets split during growth</h3>
+              <p>
+                Interview answer: as tablets grow, YugabyteDB can split them and
+                create new leaders and followers for the resulting shards. That
+                preserves scale-out behavior instead of letting one Raft group
+                grow without bound.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Scenario: Frequent elections in metrics</h3>
+              <p>
+                Interview answer: watch for elevated vote-request metrics,
+                replication latency, and under-replication. The docs tie high
+                request-vote activity to missed heartbeats from CPU pressure or
+                partition conditions.
+              </p>
+            </article>
+          </div>
+
+          <div class="split-layout">
+            <article class="panel">
+              <h3>YugabyteDB Interview Questions</h3>
+              <div class="faq-list nested-faq-list">
+                <details class="faq-item" open>
+                  <summary>How does YugabyteDB scale writes with Raft if Raft has a single leader?</summary>
+                  <p>By sharding tables into many tablets. Each tablet has its own Raft leader, so the database scales out through many leaders in parallel instead of one global leader.</p>
+                </details>
+                <details class="faq-item">
+                  <summary>What is a tablet peer in YugabyteDB?</summary>
+                  <p>A tablet peer is one replica of a tablet stored on a tserver. One peer is the leader and the others act as followers within that tablet's Raft group.</p>
+                </details>
+                <details class="faq-item">
+                  <summary>Why does leader balancing matter more than simple replica balancing?</summary>
+                  <p>Replica balancing spreads storage and redundancy, but leader balancing spreads coordination work. Since consistent reads and writes often flow through leaders, leader skew can become the real bottleneck.</p>
+                </details>
+                <details class="faq-item">
+                  <summary>How would you explain RF=3 and tablet leadership in a three-node cluster?</summary>
+                  <p>Each tablet has three replicas, one on each node. Only one replica is leader at a time. With nine tablets, a healthy balanced cluster might show roughly three leaders on each node.</p>
+                </details>
+                <details class="faq-item">
+                  <summary>What YugabyteDB metrics would you inspect during Raft trouble?</summary>
+                  <p>Consensus vote requests, replication latency, under-replicated tablets, change-config activity, follower lag, and node-level CPU or disk latency. The Raft metrics documentation explicitly surfaces these signals.</p>
+                </details>
+              </div>
+            </article>
+
+            <article class="panel">
+              <h3>Operational Scenarios</h3>
+              <ul class="check-list">
+                <li>Node crash during heavy write load: followers elect a new tablet leader per affected tablet, not one leader for the whole database.</li>
+                <li>Cluster expansion: the rebalancer moves tablets and leaders so added nodes actually absorb work.</li>
+                <li>Skewed tablet counts: capacity may look okay overall while one node still handles too many hot leaders.</li>
+                <li>Follower catch-up after outage: replicas may need log replay or bootstrap-style catch-up depending on how far behind they are.</li>
+                <li>Monitoring spike in vote requests: likely a symptom of heartbeats not being processed on time, often from CPU saturation, network issues, or disk stalls.</li>
+              </ul>
+
+              <div class="quote-strip source-strip">
+                Source note: these additions were verified against the Raft
+                project site, the Wikipedia safety/membership summary, and
+                YugabyteDB docs on Raft, data distribution, key concepts, and
+                Raft metrics.
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="failures">
+          <div class="section-heading">
+            <p class="kicker">Real Production Failure Scenarios</p>
+            <h2>What tends to hurt in production is not the paper example.</h2>
+          </div>
+
+          <div class="scenario-grid">
+            <article class="scenario-card">
+              <h3>GC pause or CPU starvation</h3>
+              <p>
+                A leader that pauses long enough can miss heartbeat deadlines,
+                triggering needless elections and latency spikes.
+              </p>
+            </article>
+            <article class="scenario-card">
+              <h3>Disk stalls on WAL fsync</h3>
+              <p>
+                Slow durable writes cause replication lag and can make a node
+                appear unhealthy even though the network is fine.
+              </p>
+            </article>
+            <article class="scenario-card">
+              <h3>Clock issues and lease confusion</h3>
+              <p>
+                Even though Raft terms do not require perfect clocks, real
+                systems often combine Raft with leases or time-based heuristics,
+                making skew operationally dangerous.
+              </p>
+            </article>
+            <article class="scenario-card">
+              <h3>Zone outage plus bad leader concentration</h3>
+              <p>
+                If too many leaders or replicas are concentrated in one zone, a
+                single failure domain can cause disproportionate pain.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section accent-section" id="qa">
+          <div class="section-heading">
+            <p class="kicker">Questions, Scenarios, Interview Q&amp;A</p>
+            <h2>Common questions people ask, from beginner to deep technical.</h2>
+          </div>
+
+          <div class="filter-bar">
+            <button class="filter-pill is-active" data-filter="all">All</button>
+            <button class="filter-pill" data-filter="fundamentals">Fundamentals</button>
+            <button class="filter-pill" data-filter="elections">Elections</button>
+            <button class="filter-pill" data-filter="deep-dive">Deep Dive</button>
+            <button class="filter-pill" data-filter="yugabyte">YugabyteDB</button>
+            <button class="filter-pill" data-filter="ops">Operations</button>
+            <button class="filter-pill" data-filter="management">Management</button>
+          </div>
+
+          <div class="faq-list">
+            <details class="faq-item" data-topic="fundamentals">
+              <summary>What problem does Raft solve?</summary>
+              <p>Raft solves distributed consensus: how multiple servers agree on the same ordered history of commands even when machines fail or messages are delayed.</p>
+            </details>
+            <details class="faq-item" data-topic="fundamentals">
+              <summary>Why does Raft need a leader?</summary>
+              <p>A single leader simplifies write ordering. Clients send writes to one authority, which reduces ambiguity and makes log replication easier to reason about.</p>
+            </details>
+            <details class="faq-item" data-topic="fundamentals">
+              <summary>How is a leader elected?</summary>
+              <p>When followers stop hearing heartbeats, one times out, becomes a candidate, increments its term, and asks peers for votes. A majority makes it leader.</p>
+            </details>
+            <details class="faq-item" data-topic="fundamentals">
+              <summary>Why are election timeouts randomized?</summary>
+              <p>Randomization reduces the chance that multiple followers become candidates simultaneously and repeatedly split the vote.</p>
+            </details>
+            <details class="faq-item" data-topic="fundamentals">
+              <summary>What is the difference between committed and replicated?</summary>
+              <p>Replicated means followers have received the entry. Committed means the protocol now guarantees the entry will survive future leadership changes and can be safely applied.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What exactly triggers a new election?</summary>
+              <p>A follower starts an election when it does not receive a valid heartbeat or append from a current leader before its randomized election timeout expires.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What does a follower do when its election timeout fires?</summary>
+              <p>It increments its term, transitions to candidate, votes for itself, resets its election timer, and sends RequestVote RPCs to the other servers.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>Can a follower vote for more than one candidate in the same term?</summary>
+              <p>No. A server grants at most one vote per term. That rule is essential for preventing multiple leaders from winning independently in the same term.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>How does a candidate become leader?</summary>
+              <p>A candidate becomes leader only after receiving votes from a majority of the current configuration. Until then, it cannot safely act as the write authority.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What if two candidates start an election at the same time?</summary>
+              <p>They can split the vote, causing neither to win. Randomized timeouts cause one of them to retry later and usually break the tie in a subsequent term.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What happens if a candidate loses the election?</summary>
+              <p>If it sees a valid leader or a higher term, it steps down to follower. If nobody wins, it remains a candidate and may start a new election after another timeout.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>How does a stale leader get forced to step down?</summary>
+              <p>If the old leader receives any RPC with a higher term, it must immediately update its term and become a follower. This is a core safety mechanism.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>Can there be two leaders at once?</summary>
+              <p>Two nodes may both believe they are leader briefly during partitions or delayed messaging, but only one side can normally obtain a majority and commit entries. The stale one steps down after learning about the newer term.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>Why does log freshness matter during voting?</summary>
+              <p>Voters compare the candidate's last log term and index with their own. They refuse to elect a candidate whose log is less up to date, helping preserve committed entries.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What if a node has the highest term but a stale log?</summary>
+              <p>Having the highest term alone is not enough. It still must pass the up-to-date log check to win votes from a majority.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What happens if the leader is isolated with only one follower in a five-node cluster?</summary>
+              <p>That minority side cannot commit new writes because it only has 2 of 5 nodes. The majority side can elect a new leader with 3 votes and continue safely.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What happens to client writes during an election?</summary>
+              <p>Writes may stall or be retried until a new leader is elected. Good clients or proxies typically retry after redirect or timeout.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>Can a candidate append new log entries before winning?</summary>
+              <p>No. A candidate is not yet the authoritative leader. It must first win the election and then start replicating as leader.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What if a candidate receives AppendEntries from a valid leader in the same or higher term?</summary>
+              <p>It steps down to follower and accepts that leader, assuming the term is current and the log consistency checks pass.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>How do heartbeats relate to leader election?</summary>
+              <p>Heartbeats are AppendEntries RPCs with no new user data. They tell followers that a current leader still exists, preventing unnecessary elections.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What happens if heartbeats are delayed but the leader is not actually dead?</summary>
+              <p>Followers may start needless elections, causing leader churn. This is why timeout tuning must account for real network and scheduling delays.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What if a follower restarts during an election?</summary>
+              <p>After restart it comes back as a follower with persisted term and vote state. It then participates based on the latest term information it sees.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What if no node can get a majority?</summary>
+              <p>The cluster cannot elect a leader and becomes unavailable for new writes until quorum is restored. Raft prefers unavailability over unsafe divergent commits.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>How do even-numbered clusters affect elections?</summary>
+              <p>They do not improve failure tolerance compared with the next lower odd number and can make ties more likely. That is why 3 or 5 voters are more common.</p>
+            </details>
+            <details class="faq-item" data-topic="elections">
+              <summary>What are the most important election edge cases to know?</summary>
+              <p>Split votes, stale leaders after partition heal, delayed RPCs from old terms, candidates with stale logs, repeated timeouts from CPU or disk stalls, and rejoining nodes that must step down immediately on seeing higher terms.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>How do log matching rules prevent divergence?</summary>
+              <p>Followers only accept new entries if the preceding index and term match their own logs. That forces agreement on history before appending more commands.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>What is the election restriction in Raft?</summary>
+              <p>A candidate must be at least as up to date as the voter. This helps ensure committed entries are preserved by future leaders.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>What makes the Figure-8 scenario famous?</summary>
+              <p>It highlights that widespread replication of an older-term entry is still not enough for safe commitment without the correct quorum-based commit rule.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>Can Raft have split-brain?</summary>
+              <p>It can have temporary leader confusion during partitions, but it should not allow two independent sides to both commit conflicting histories because quorums intersect.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>What are important Raft edge cases?</summary>
+              <p>Repeated split votes, stale leaders after partitions, uncommitted log tails, snapshot installation, membership changes, and delayed messages arriving after term changes.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>How does Raft recover a follower that is far behind?</summary>
+              <p>If log replay is too expensive or compacted away, the leader sends a snapshot so the follower can jump forward and then resume normal replication.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>How does Raft change cluster membership safely?</summary>
+              <p>Through joint consensus. During the transition, elections and commits require overlapping majorities from both the old and new configurations, which avoids unsafe handoff between disjoint quorums.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>Why is log compaction part of the real Raft story?</summary>
+              <p>Without compaction, logs would grow forever. Real implementations snapshot state and discard old prefixes so storage and recovery stay practical.</p>
+            </details>
+            <details class="faq-item" data-topic="yugabyte">
+              <summary>How does YugabyteDB use Raft?</summary>
+              <p>Each tablet has its own Raft group, leader, WAL, and followers. That lets the database scale writes horizontally across many tablet leaders.</p>
+            </details>
+            <details class="faq-item" data-topic="yugabyte">
+              <summary>What are tablet leaders in YugabyteDB?</summary>
+              <p>They are the per-tablet Raft leaders responsible for coordinating writes and replication for a specific shard of data.</p>
+            </details>
+            <details class="faq-item" data-topic="yugabyte">
+              <summary>Why does tablet leader distribution matter?</summary>
+              <p>Because leadership placement controls where write coordination work lands. Uneven distribution creates hotspots and poor cluster utilization.</p>
+            </details>
+            <details class="faq-item" data-topic="yugabyte">
+              <summary>Which Yugabyte-specific tuning areas usually matter?</summary>
+              <p>Election/heartbeat timing, load balancing, placement policies, RPC pressure, WAL and compaction throughput, and remote bootstrap behavior.</p>
+            </details>
+            <details class="faq-item" data-topic="yugabyte">
+              <summary>Does YugabyteDB use plain textbook Raft?</summary>
+              <p>Not exactly. YugabyteDB documentation says its implementation is based on Apache Kudu's Raft but includes enhancements such as leader leases and pre-voting state in learner mode.</p>
+            </details>
+            <details class="faq-item" data-topic="yugabyte">
+              <summary>How can you inspect tablet leadership in YugabyteDB?</summary>
+              <p>You can use cluster UI and metadata views such as `yb_tablet_metadata` to see tablet placement and which node currently leads a given tablet.</p>
+            </details>
+            <details class="faq-item" data-topic="ops">
+              <summary>What symptoms suggest Raft instability in production?</summary>
+              <p>Frequent leader stepdowns, high write tail latency, follower lag, under-replicated tablets, consensus queue growth, and bursts of election activity.</p>
+            </details>
+            <details class="faq-item" data-topic="ops">
+              <summary>How do you troubleshoot repeated leader elections?</summary>
+              <p>Check packet loss, CPU stalls, disk latency, overloaded RPC threads, heartbeat tuning, and whether a node is intermittently isolated by a firewall or faulty switch.</p>
+            </details>
+            <details class="faq-item" data-topic="ops">
+              <summary>What are realistic production failure scenarios to discuss in interviews?</summary>
+              <p>Zone partition, noisy-neighbor CPU starvation, long fsync latency, mass leader concentration on a single node, and follower catch-up after prolonged outage.</p>
+            </details>
+            <details class="faq-item" data-topic="management">
+              <summary>How do you explain Raft to non-engineering leadership?</summary>
+              <p>Use business language: Raft makes sure the database picks a single authority per shard, confirms changes safely, and fails over predictably when infrastructure misbehaves.</p>
+            </details>
+            <details class="faq-item" data-topic="management">
+              <summary>What are management talking points for Raft-based systems?</summary>
+              <p>Predictable failover, strong consistency, controlled fault tolerance, clear operational behavior, and a tradeoff of extra coordination for lower corruption risk.</p>
+            </details>
+          </div>
+        </section>
+
+        <section class="section" id="sources">
+          <div class="section-heading">
+            <p class="kicker">Sources</p>
+            <h2>Reference links used to verify and extend the content.</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Raft Project Site</h3>
+              <p>
+                <a href="https://raft.github.io/" target="_blank" rel="noreferrer">raft.github.io</a>
+                anchors the overview: Raft is designed for understandability and
+                uses majority-based progress.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>Wikipedia Summary</h3>
+              <p>
+                <a href="https://en.wikipedia.org/wiki/Raft_(algorithm)" target="_blank" rel="noreferrer">Raft (algorithm)</a>
+                helped verify the named safety properties, leader election flow,
+                and joint consensus membership-change summary.
+              </p>
+            </article>
+            <article class="info-card">
+              <h3>YugabyteDB Docs</h3>
+              <p>
+                <a href="https://www.yugabyte.com/key-concepts/raft-consensus-algorithm/" target="_blank" rel="noreferrer">Yugabyte Raft overview</a>,
+                plus official docs on data distribution, key concepts, and Raft
+                metrics, were used to verify tablet leaders, balancing, and
+                operational scenarios.
+              </p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <div class="footer-card">
+          <p class="kicker">Creator</p>
+          <h3>This Raft website was created by Pankaj Bhagwani.</h3>
+          <div class="footer-links">
+            <a href="mailto:bhagwanipankaj13@gmail.com">bhagwanipankaj13@gmail.com</a>
+            <a href="https://www.linkedin.com/in/pankaj-bhagwani/" target="_blank" rel="noreferrer">LinkedIn</a>
+            <a href="https://portfolio.pankajbhagwani.com/" target="_blank" rel="noreferrer">portfolio.pankajbhagwani.com</a>
+          </div>
+          <div class="copyright-line">&copy; 2026 Pankaj Bhagwani. All rights reserved.</div>
+        </div>
+      </footer>
+    </div>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
