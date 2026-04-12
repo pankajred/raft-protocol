@@ -132,6 +132,62 @@
             </article>
           </div>
 
+          <div class="card-grid three-up formula-grid">
+            <article class="info-card formula-card">
+              <h3>Majority / Quorum Formula</h3>
+              <p class="formula-line">quorum = ⌊N / 2⌋ + 1</p>
+              <p>
+                Raft makes progress when a majority of voting members can
+                communicate. In a 3-node cluster, quorum is 2. In a 5-node
+                cluster, quorum is 3.
+              </p>
+            </article>
+            <article class="info-card formula-card">
+              <h3>Failure Tolerance Formula</h3>
+              <p class="formula-line">f = ⌊(N - 1) / 2⌋</p>
+              <p>
+                This tells you how many node failures a cluster can tolerate
+                while still electing a leader and committing writes. A 5-node
+                cluster tolerates 2 failures.
+              </p>
+            </article>
+            <article class="info-card formula-card">
+              <h3>Cluster Sizing Rule</h3>
+              <p class="formula-line">N = 2f + 1</p>
+              <p>
+                If you want to tolerate <strong>f</strong> failures, you need an
+                odd-sized cluster of at least <strong>2f + 1</strong> voting
+                members. That is why 3, 5, and 7 are common Raft sizes.
+              </p>
+            </article>
+          </div>
+
+          <article class="panel formula-panel">
+            <h3>Quick Raft Formula Examples</h3>
+            <div class="comparison-table formula-table" role="table" aria-label="Raft quorum and failure tolerance examples">
+              <div class="table-head">Nodes (N)</div>
+              <div class="table-head">Quorum</div>
+              <div class="table-head">Failures Tolerated</div>
+
+              <div class="table-cell">3</div>
+              <div class="table-cell">2</div>
+              <div class="table-cell">1</div>
+
+              <div class="table-cell">5</div>
+              <div class="table-cell">3</div>
+              <div class="table-cell">2</div>
+
+              <div class="table-cell">7</div>
+              <div class="table-cell">4</div>
+              <div class="table-cell">3</div>
+            </div>
+            <div class="quote-strip source-strip">
+              Formula note: these majority and failure-tolerance rules are
+              consistent with the Raft project site and Docker's official Swarm
+              Raft documentation.
+            </div>
+          </article>
+
           <div class="split-layout">
             <article class="panel">
               <h3>Open Source Systems That Use Raft</h3>
@@ -151,6 +207,9 @@
                 <a href="https://docs.dgraph.io/design-concepts/raft/" target="_blank" rel="noreferrer">Dgraph</a>
                 <a href="https://tikv.org/docs/4.0/concepts/architecture/" target="_blank" rel="noreferrer">TiKV</a>
                 <a href="https://github.com/moby/swarmkit" target="_blank" rel="noreferrer">SwarmKit</a>
+                <a href="https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/" target="_blank" rel="noreferrer">Kubernetes (via etcd)</a>
+                <a href="https://hyperledger-fabric.readthedocs.io/en/latest/orderer/ordering_service.html" target="_blank" rel="noreferrer">Hyperledger Fabric</a>
+                <a href="https://tikv.org/blog/implement-raft-in-rust/" target="_blank" rel="noreferrer">TiKV (Rust)</a>
               </div>
             </article>
 
