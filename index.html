@@ -326,6 +326,12 @@
           <div class="section-heading">
             <p class="kicker">Detailed Diagrams</p>
             <h2>Visual flow diagrams for leader election, replication, and failure handling.</h2>
+            <p>
+              These diagrams are intentionally simplified so a new learner can
+              follow the protocol without reading a research paper first. Each
+              one shows the order of events, the quorum rule, and the failure
+              outcome that matters most.
+            </p>
           </div>
 
           <div class="diagram-stack">
@@ -333,94 +339,134 @@
               <div class="diagram-copy">
                 <h3>Leader Election Flow Diagram</h3>
                 <p>
-                  Election timeouts are randomized so that one follower likely
-                  times out first, increments its term, votes for itself, and
-                  requests votes from peers.
+                  One follower times out first, starts a new term, asks for
+                  votes, and becomes leader only if it wins a majority.
                 </p>
               </div>
-              <svg viewBox="0 0 900 260" class="svg-diagram" role="img" aria-label="Leader election flow diagram">
-                <defs>
-                  <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                    <path d="M0,0 L10,3 L0,6 z" fill="currentColor"></path>
-                  </marker>
-                </defs>
-                <rect x="20" y="40" width="170" height="72" rx="18"></rect>
-                <text x="105" y="72">Follower timeout</text>
-                <text x="105" y="95">no heartbeat seen</text>
+              <div class="diagram-sequence">
+                <div class="sequence-step warning">
+                  <span class="step-number">1</span>
+                  <h4>Heartbeat missing</h4>
+                  <p>A follower stops hearing from the leader before its randomized timeout expires.</p>
+                </div>
+                <div class="sequence-arrow">→</div>
+                <div class="sequence-step">
+                  <span class="step-number">2</span>
+                  <h4>Become candidate</h4>
+                  <p>The node increments the term, votes for itself, and starts a fresh election.</p>
+                </div>
+                <div class="sequence-arrow">→</div>
+                <div class="sequence-step">
+                  <span class="step-number">3</span>
+                  <h4>Request votes</h4>
+                  <p>Peers compare the candidate's term and log freshness before granting a vote.</p>
+                </div>
+                <div class="sequence-arrow">→</div>
+                <div class="sequence-step success">
+                  <span class="step-number">4</span>
+                  <h4>Majority wins</h4>
+                  <p>If it gets quorum, it becomes leader. If not, it retries in a later term.</p>
+                </div>
+              </div>
 
-                <line x1="190" y1="76" x2="300" y2="76" marker-end="url(#arrow)"></line>
-
-                <rect x="300" y="40" width="170" height="72" rx="18"></rect>
-                <text x="385" y="72">Become candidate</text>
-                <text x="385" y="95">term + 1, self-vote</text>
-
-                <line x1="470" y1="76" x2="600" y2="76" marker-end="url(#arrow)"></line>
-
-                <rect x="600" y="40" width="170" height="72" rx="18"></rect>
-                <text x="685" y="72">RequestVote RPCs</text>
-                <text x="685" y="95">to all peers</text>
-
-                <line x1="685" y1="112" x2="685" y2="178" marker-end="url(#arrow)"></line>
-
-                <rect x="570" y="178" width="230" height="62" rx="18"></rect>
-                <text x="685" y="205">Majority votes received?</text>
-                <text x="685" y="226">Yes: become leader</text>
-
-                <line x1="570" y1="209" x2="468" y2="209" marker-end="url(#arrow)"></line>
-                <text x="500" y="196">No</text>
-                <text x="478" y="227">retry after new timeout</text>
-              </svg>
+              <div class="cluster-explainer">
+                <div class="cluster-column">
+                  <h4>Before election</h4>
+                  <div class="explainer-nodes">
+                    <span class="explainer-node follower">A follower</span>
+                    <span class="explainer-node follower">B follower</span>
+                    <span class="explainer-node follower">C follower</span>
+                  </div>
+                </div>
+                <div class="cluster-column">
+                  <h4>During election</h4>
+                  <div class="explainer-nodes">
+                    <span class="explainer-node candidate">A candidate</span>
+                    <span class="explainer-node follower">B voter</span>
+                    <span class="explainer-node follower">C voter</span>
+                  </div>
+                </div>
+                <div class="cluster-column">
+                  <h4>After quorum</h4>
+                  <div class="explainer-nodes">
+                    <span class="explainer-node leader">A leader</span>
+                    <span class="explainer-node follower">B follower</span>
+                    <span class="explainer-node follower">C follower</span>
+                  </div>
+                </div>
+              </div>
             </article>
 
             <article class="diagram-card">
               <div class="diagram-copy">
                 <h3>Replication and Commit Flow</h3>
                 <p>
-                  The leader appends the client command locally, ships it to
-                  followers, and marks it committed only after a majority
-                  acknowledges the entry.
+                  A log entry is only safe after the leader replicates it to a
+                  majority and then marks it committed.
                 </p>
               </div>
-              <div class="replication-flow">
-                <div class="flow-node active">1. Client write hits leader</div>
-                <div class="flow-arrow"></div>
-                <div class="flow-node">2. Leader appends entry</div>
-                <div class="flow-arrow"></div>
-                <div class="flow-node">3. Followers validate `prevLogIndex` and `prevLogTerm`</div>
-                <div class="flow-arrow"></div>
-                <div class="flow-node">4. Majority ACKs</div>
-                <div class="flow-arrow"></div>
-                <div class="flow-node success">5. Commit and apply to state machine</div>
+              <div class="replication-board">
+                <div class="replication-lane">
+                  <div class="lane-label">Leader path</div>
+                  <div class="lane-steps">
+                    <span class="lane-step active">1. Client sends write</span>
+                    <span class="lane-step active">2. Leader appends entry</span>
+                    <span class="lane-step active">3. Leader sends AppendEntries</span>
+                  </div>
+                </div>
+                <div class="replication-lane">
+                  <div class="lane-label">Follower path</div>
+                  <div class="lane-steps">
+                    <span class="lane-step">4. Followers check prevLogIndex / prevLogTerm</span>
+                    <span class="lane-step">5. Matching followers append and ACK</span>
+                    <span class="lane-step success">6. Majority ACK means commit</span>
+                  </div>
+                </div>
+                <div class="commit-note">
+                  Important: replicated is not the same as committed. The leader
+                  can respond safely only after quorum is reached and the entry
+                  is committed.
+                </div>
               </div>
             </article>
 
             <article class="diagram-card">
               <div class="diagram-copy">
-                <h3>Split-Brain Prevention</h3>
+                <h3>Failure Handling and Split-Brain Prevention</h3>
                 <p>
-                  Raft avoids true split-brain commits by requiring quorums and
-                  forcing outdated leaders to step down when they observe higher
-                  terms.
+                  Raft can survive temporary leader confusion, but it avoids
+                  unsafe split-brain commits because only the majority side can
+                  elect a leader and commit writes.
                 </p>
               </div>
-              <div class="brain-grid">
-                <div class="brain-panel">
-                  <h4>Minority side</h4>
-                  <p>Old leader can still send heartbeats locally but cannot commit new writes without a majority.</p>
-                  <div class="mini-cluster">
-                    <span class="mini-node lead">L</span>
+              <div class="failure-grid">
+                <div class="failure-panel minority">
+                  <h4>Minority partition</h4>
+                  <p>The old leader may still believe it is leader, but it cannot commit anything new because it lost quorum.</p>
+                  <div class="failure-mini-cluster">
+                    <span class="mini-node lead">Old L</span>
                     <span class="mini-node muted">F</span>
-                    <span class="mini-cross">x</span>
                   </div>
+                  <div class="failure-result danger-result">No safe commits</div>
                 </div>
-                <div class="brain-divider"></div>
-                <div class="brain-panel">
-                  <h4>Majority side</h4>
-                  <p>A new leader can be elected here because it still has quorum. When connectivity returns, the stale leader steps down.</p>
-                  <div class="mini-cluster">
+
+                <div class="failure-panel majority">
+                  <h4>Majority partition</h4>
+                  <p>This side still has quorum, so it can elect a new leader in a higher term and keep the service alive.</p>
+                  <div class="failure-mini-cluster">
                     <span class="mini-node healthy">F</span>
-                    <span class="mini-node leader2">N</span>
+                    <span class="mini-node leader2">New L</span>
                     <span class="mini-node healthy">F</span>
+                  </div>
+                  <div class="failure-result success-result">Writes can continue</div>
+                </div>
+
+                <div class="failure-panel recovery">
+                  <h4>After recovery</h4>
+                  <p>When the partition heals, the old leader sees the higher term and steps down. Divergent uncommitted entries are repaired.</p>
+                  <div class="recovery-note">
+                    Safety rule: terms move forward, and quorum intersection
+                    prevents two conflicting committed histories.
                   </div>
                 </div>
               </div>
@@ -822,6 +868,14 @@
               <summary>What is the difference between committed and replicated?</summary>
               <p>Replicated means followers have received the entry. Committed means the protocol now guarantees the entry will survive future leadership changes and can be safely applied.</p>
             </details>
+            <details class="faq-item" data-topic="fundamentals">
+              <summary>What are the main formulas to remember in Raft?</summary>
+              <p>The most useful formulas are quorum = floor(N/2) + 1, failure tolerance f = floor((N - 1)/2), and cluster size N = 2f + 1. They explain majority voting and why odd-sized clusters are common.</p>
+            </details>
+            <details class="faq-item" data-topic="fundamentals">
+              <summary>Which open source systems use Raft in production?</summary>
+              <p>Verified examples include etcd, Consul, Nomad, rqlite, YugabyteDB, CockroachDB, Dgraph, TiKV, SwarmKit, Kubernetes through etcd, and Hyperledger Fabric's Raft-based ordering service.</p>
+            </details>
             <details class="faq-item" data-topic="elections">
               <summary>What exactly triggers a new election?</summary>
               <p>A follower starts an election when it does not receive a valid heartbeat or append from a current leader before its randomized election timeout expires.</p>
@@ -934,6 +988,14 @@
               <summary>Why is log compaction part of the real Raft story?</summary>
               <p>Without compaction, logs would grow forever. Real implementations snapshot state and discard old prefixes so storage and recovery stay practical.</p>
             </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>How should I read a Raft leader-election diagram?</summary>
+              <p>Start with the missing heartbeat, then follow the timeout to candidate transition, then the RequestVote step, and finally the quorum decision. The key decision point is always whether a majority voted for the candidate.</p>
+            </details>
+            <details class="faq-item" data-topic="deep-dive">
+              <summary>How should I read a replication diagram?</summary>
+              <p>Track the entry from client to leader log, then from leader to followers, then watch for the majority acknowledgment. The critical lesson is that commit happens after quorum, not after the first copy.</p>
+            </details>
             <details class="faq-item" data-topic="yugabyte">
               <summary>How does YugabyteDB use Raft?</summary>
               <p>Each tablet has its own Raft group, leader, WAL, and followers. That lets the database scale writes horizontally across many tablet leaders.</p>
@@ -958,6 +1020,10 @@
               <summary>How can you inspect tablet leadership in YugabyteDB?</summary>
               <p>You can use cluster UI and metadata views such as `yb_tablet_metadata` to see tablet placement and which node currently leads a given tablet.</p>
             </details>
+            <details class="faq-item" data-topic="yugabyte">
+              <summary>What Yugabyte-specific tuning flags or tuning areas usually matter?</summary>
+              <p>Operationally, teams most often tune election and heartbeat timing, load balancing, placement policy, RPC concurrency, WAL throughput, compaction behavior, and remote bootstrap or catch-up behavior.</p>
+            </details>
             <details class="faq-item" data-topic="ops">
               <summary>What symptoms suggest Raft instability in production?</summary>
               <p>Frequent leader stepdowns, high write tail latency, follower lag, under-replicated tablets, consensus queue growth, and bursts of election activity.</p>
@@ -970,6 +1036,10 @@
               <summary>What are realistic production failure scenarios to discuss in interviews?</summary>
               <p>Zone partition, noisy-neighbor CPU starvation, long fsync latency, mass leader concentration on a single node, and follower catch-up after prolonged outage.</p>
             </details>
+            <details class="faq-item" data-topic="ops">
+              <summary>What operational troubleshooting checklist is useful for Raft clusters?</summary>
+              <p>Check quorum health, leader churn, packet loss, disk latency, CPU starvation, clock issues where leases exist, follower lag, and whether one failure domain holds too many leaders or replicas.</p>
+            </details>
             <details class="faq-item" data-topic="management">
               <summary>How do you explain Raft to non-engineering leadership?</summary>
               <p>Use business language: Raft makes sure the database picks a single authority per shard, confirms changes safely, and fails over predictably when infrastructure misbehaves.</p>
@@ -977,6 +1047,10 @@
             <details class="faq-item" data-topic="management">
               <summary>What are management talking points for Raft-based systems?</summary>
               <p>Predictable failover, strong consistency, controlled fault tolerance, clear operational behavior, and a tradeoff of extra coordination for lower corruption risk.</p>
+            </details>
+            <details class="faq-item" data-topic="management">
+              <summary>How do you explain why Raft is important to management?</summary>
+              <p>Raft is important because it turns a cluster of machines into a coordinated system with predictable failover and lower corruption risk. It adds coordination cost, but it dramatically improves correctness and confidence during failures.</p>
             </details>
           </div>
         </section>

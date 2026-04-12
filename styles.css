@@ -356,82 +356,206 @@ summary:hover {
   gap: 18px;
 }
 
-.svg-diagram {
-  width: 100%;
-  height: auto;
-  color: var(--ink);
+.diagram-sequence {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  align-items: stretch;
   margin-top: 18px;
 }
 
-.svg-diagram rect,
-.svg-diagram line {
-  fill: rgba(255, 248, 237, 0.85);
-  stroke: currentColor;
-  stroke-width: 2;
+.sequence-step {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.58);
 }
 
-.svg-diagram text {
-  text-anchor: middle;
-  font-size: 18px;
-  fill: var(--ink);
-  font-family: "Space Grotesk", sans-serif;
+.sequence-step.warning {
+  background: rgba(211, 133, 44, 0.1);
 }
 
-.replication-flow {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
+.sequence-step.success {
+  background: rgba(47, 90, 47, 0.12);
+}
+
+.sequence-step h4,
+.cluster-column h4,
+.lane-label,
+.failure-panel h4 {
+  margin: 0 0 8px;
+}
+
+.sequence-step p,
+.cluster-column p,
+.failure-panel p,
+.recovery-note,
+.commit-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.step-number {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   align-items: center;
-  margin-top: 16px;
+  justify-content: center;
+  margin-bottom: 10px;
+  background: rgba(26, 23, 18, 0.08);
+  font-weight: 700;
 }
 
-.flow-node {
-  min-height: 112px;
-  border-radius: 18px;
-  padding: 14px;
+.sequence-arrow {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  background: rgba(255, 255, 255, 0.56);
-  border: 1px solid var(--line);
-  color: var(--ink);
+  color: var(--rust);
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 
-.flow-node.active {
-  background: rgba(180, 77, 33, 0.12);
-}
-
-.flow-node.success {
-  background: rgba(47, 90, 47, 0.14);
-}
-
-.flow-arrow {
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, var(--gold), var(--rust));
-}
-
-.brain-grid {
+.cluster-explainer {
   display: grid;
-  grid-template-columns: 1fr 40px 1fr;
-  gap: 18px;
-  align-items: center;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
   margin-top: 18px;
 }
 
-.brain-panel {
-  border-radius: 22px;
+.cluster-column {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.explainer-nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.explainer-node {
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-size: 0.9rem;
+}
+
+.explainer-node.follower {
+  background: rgba(31, 115, 105, 0.1);
+}
+
+.explainer-node.candidate {
+  background: rgba(211, 133, 44, 0.15);
+}
+
+.explainer-node.leader {
+  background: rgba(180, 77, 33, 0.14);
+}
+
+.replication-board {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.replication-lane {
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
   background: rgba(255, 255, 255, 0.48);
-  padding: 18px;
+}
+
+.lane-label {
+  font-weight: 700;
+}
+
+.lane-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.lane-step {
+  min-height: 90px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 248, 237, 0.9);
+  display: flex;
+  align-items: center;
+}
+
+.lane-step.active {
+  background: rgba(180, 77, 33, 0.1);
+}
+
+.lane-step.success {
+  background: rgba(47, 90, 47, 0.12);
+}
+
+.commit-note {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 248, 237, 0.9);
   border: 1px solid var(--line);
 }
 
-.brain-divider {
-  width: 1px;
-  height: 100%;
-  margin: auto;
-  background: linear-gradient(180deg, transparent, var(--danger), transparent);
+.failure-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.failure-panel {
+  padding: 18px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.48);
+  border: 1px solid var(--line);
+}
+
+.failure-panel.minority {
+  background: rgba(141, 46, 44, 0.06);
+}
+
+.failure-panel.majority {
+  background: rgba(47, 90, 47, 0.08);
+}
+
+.failure-mini-cluster {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+
+.failure-result {
+  display: inline-flex;
+  padding: 9px 12px;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.danger-result {
+  background: rgba(141, 46, 44, 0.14);
+  color: var(--danger);
+}
+
+.success-result {
+  background: rgba(47, 90, 47, 0.14);
+  color: var(--forest);
+}
+
+.recovery-note {
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 248, 237, 0.9);
+  border: 1px solid var(--line);
 }
 
 .mini-cluster {
@@ -823,19 +947,14 @@ summary:hover {
   .figure-eight,
   .scenario-grid,
   .three-up,
-  .brain-grid {
+  .failure-grid,
+  .cluster-explainer {
     grid-template-columns: 1fr;
   }
 
-  .replication-flow {
+  .diagram-sequence,
+  .lane-steps {
     grid-template-columns: 1fr;
-  }
-
-  .flow-arrow {
-    width: 4px;
-    height: 28px;
-    justify-self: center;
-    background: linear-gradient(180deg, var(--gold), var(--rust));
   }
 
   .comparison-table {
@@ -860,7 +979,9 @@ summary:hover {
 
   .cluster-visual,
   .cluster-notes,
-  .tablet-board {
+  .tablet-board,
+  .diagram-sequence,
+  .lane-steps {
     grid-template-columns: 1fr;
   }
 }
