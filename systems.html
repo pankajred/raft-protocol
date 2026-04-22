@@ -24,7 +24,49 @@
         </div>
       </header>
       <main>
+        <section class="section">
+          <div class="section-heading">
+            <p class="kicker">Importance</p>
+            <h2>Raft shows up in the systems people already trust.</h2>
+            <p>
+              The older homepage included this context near the top to prove
+              Raft's importance. It now belongs on the Systems page, with direct
+              official links beside each project so readers can verify that the
+              system uses Raft or relies on a Raft-backed component.
+            </p>
+          </div>
+          <div class="split-layout">
+            <article class="panel">
+              <h3>What These Projects Use Raft For</h3>
+              <ul class="check-list">
+                <li>etcd: consistent metadata and coordination state.</li>
+                <li>Consul and Nomad: control-plane state, leadership, and scheduling metadata.</li>
+                <li>rqlite: replicated SQLite writes with consensus-backed commit.</li>
+                <li>YugabyteDB, CockroachDB, Dgraph, and TiKV: sharded or range/tablet-level replicated data.</li>
+                <li>SwarmKit, Kubernetes via etcd, and Hyperledger Fabric: authoritative orchestration or ordering state.</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>Why This Matters Operationally</h3>
+              <ul class="check-list">
+                <li>Raft quorum loss can block writes even when some nodes are still alive.</li>
+                <li>Leader placement affects latency, hotspots, and failover behavior.</li>
+                <li>Many systems expose Raft problems as product-level incidents, such as API server instability or scheduler stalls.</li>
+                <li>Understanding Raft gives engineers a shared language for outages: leader, term, quorum, commit, follower lag, and catch-up.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
         <section class="section accent-section">
+          <div class="section-heading">
+            <p class="kicker">Verified Examples</p>
+            <h2>Open source systems and technologies that use Raft.</h2>
+            <p>
+              Each card links to an official project page, official
+              documentation page, or project-maintained implementation note.
+            </p>
+          </div>
           <div class="systems-grid">
             <article class="system-card"><h3><a href="https://github.com/etcd-io/etcd">etcd</a></h3><p class="system-question">Why does quorum loss threaten coordination?</p><p>Because safe metadata writes require a stable Raft leader and majority.</p></article>
             <article class="system-card"><h3><a href="https://developer.hashicorp.com/consul/docs/concept/consensus">HashiCorp Consul</a></h3><p class="system-question">Why do Consul servers use odd counts?</p><p>Odd voter counts maximize failure tolerance and avoid unnecessary even-sized quorum overhead.</p></article>

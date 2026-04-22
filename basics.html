@@ -46,6 +46,49 @@
 
         <section class="section accent-section">
           <div class="section-heading">
+            <p class="kicker">Why Raft Matters</p>
+            <h2>Raft is popular because it makes safe distributed agreement teachable and operable.</h2>
+            <p>
+              The original guide explained why Raft matters before diving into
+              edge cases. That context belongs here: Raft is not just an
+              academic algorithm, it is the mental model behind many reliable
+              control planes, databases, schedulers, and replicated metadata
+              systems.
+            </p>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card">
+              <h3>Why Engineers Care</h3>
+              <ul class="check-list">
+                <li>It gives a clean model for fault-tolerant writes.</li>
+                <li>It separates leader election, log replication, and safety.</li>
+                <li>It uses majority quorum to prevent unsafe split-brain commits.</li>
+                <li>It makes leadership changes easier to debug than many older consensus explanations.</li>
+              </ul>
+            </article>
+            <article class="info-card">
+              <h3>Why Companies Care</h3>
+              <ul class="check-list">
+                <li>Predictable failover improves operational confidence.</li>
+                <li>Committed history survives crashes and leader changes.</li>
+                <li>Strong consistency protects metadata, coordination, and database writes.</li>
+                <li>Availability tradeoffs are explicit instead of hidden.</li>
+              </ul>
+            </article>
+            <article class="info-card">
+              <h3>Why It Became Popular</h3>
+              <ul class="check-list">
+                <li>The Raft project emphasizes understandability.</li>
+                <li>It offers Paxos-style safety goals with a clearer teaching structure.</li>
+                <li>It maps naturally to real operational questions: who is leader, who has quorum, and what is committed.</li>
+                <li>Many production systems use Raft directly or rely on Raft-backed components.</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading">
             <p class="kicker">Formulas</p>
             <h2>The math behind quorum and failure tolerance.</h2>
           </div>
@@ -54,6 +97,28 @@
             <article class="info-card formula-card"><h3>Failures</h3><p class="formula-line">f = floor((N - 1) / 2)</p><p>A 5-node cluster can tolerate 2 failed voting members and still keep quorum.</p></article>
             <article class="info-card formula-card"><h3>Sizing</h3><p class="formula-line">N = 2f + 1</p><p>To tolerate f failures, use at least 2f + 1 voting members.</p></article>
           </div>
+          <article class="panel formula-panel">
+            <h3>Quick Raft Formula Examples</h3>
+            <div class="comparison-table formula-table" role="table" aria-label="Raft quorum and failure tolerance examples">
+              <div class="table-head">Nodes (N)</div>
+              <div class="table-head">Quorum</div>
+              <div class="table-head">Failures Tolerated</div>
+              <div class="table-cell">3</div>
+              <div class="table-cell">2</div>
+              <div class="table-cell">1</div>
+              <div class="table-cell">5</div>
+              <div class="table-cell">3</div>
+              <div class="table-cell">2</div>
+              <div class="table-cell">7</div>
+              <div class="table-cell">4</div>
+              <div class="table-cell">3</div>
+            </div>
+            <div class="quote-strip source-strip">
+              Formula note: these majority and failure-tolerance rules match the
+              standard Raft quorum model and the common 3, 5, and 7 voter
+              production sizing pattern.
+            </div>
+          </article>
         </section>
 
         <section class="section">
@@ -69,6 +134,20 @@
             <article class="panel">
               <h3>Raft vs Paxos</h3>
               <p>Raft is designed to be equivalent to Paxos in fault tolerance and performance goals, but decomposes consensus into leader election, log replication, and safety so teams can understand and implement it more easily.</p>
+            </article>
+          </div>
+          <div class="card-grid three-up verification-grid">
+            <article class="info-card">
+              <h3>Joint Consensus</h3>
+              <p>Membership changes are handled safely by temporarily requiring overlapping majorities from old and new configurations.</p>
+            </article>
+            <article class="info-card">
+              <h3>Log Compaction</h3>
+              <p>Real implementations compact old log prefixes into snapshots so followers can catch up without replaying history forever.</p>
+            </article>
+            <article class="info-card">
+              <h3>Safety Properties</h3>
+              <p>The key properties are election safety, leader append-only, log matching, leader completeness, and state machine safety.</p>
             </article>
           </div>
         </section>
