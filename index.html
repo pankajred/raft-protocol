@@ -16,17 +16,22 @@
     />
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
+  <body class="home-page">
     <div class="page-shell">
       <header class="hero" id="top">
         <nav class="topbar">
-          <a class="brand" href="#top">Raft Field Guide</a>
+          <a class="brand" href="./index.html">Raft Field Guide</a>
           <div class="topbar-links">
-            <a href="#overview">Overview</a>
-            <a href="#diagrams">Diagrams</a>
-            <a href="#yugabyte">YugabyteDB</a>
-            <a href="#qa">Q&amp;A</a>
+            <a href="./basics.html">Basics</a>
+            <a href="./diagrams.html">Diagrams</a>
+            <a href="./yugabyte.html">YugabyteDB</a>
+            <a href="./systems.html">Systems</a>
+            <a href="./questions.html">Q&amp;A</a>
             <a href="./raft-lab.html">Raft Lab</a>
+          </div>
+          <div class="language-box">
+            <span>Language</span>
+            <div id="google_translate_element"></div>
           </div>
         </nav>
 
@@ -34,8 +39,7 @@
           <div class="hero-copy">
             <p class="eyebrow">Distributed Systems • Consensus • Operations</p>
             <h1>
-              Understand <a class="hero-link" href="https://raftprotocol.com/">Raft</a> the way engineers, interviewers, and
-              managers actually ask about it.
+              Master <a class="hero-link" href="https://raftprotocol.com/">Raft</a> consensus for distributed systems.
             </h1>
             <p class="hero-text">
               This site turns Raft from an abstract consensus algorithm into a
@@ -45,8 +49,8 @@
               production.
             </p>
             <div class="hero-actions">
-              <a class="button button-primary" href="#overview">Start Learning</a>
-              <a class="button button-secondary" href="#qa">Jump to Questions</a>
+              <a class="button button-primary" href="./basics.html">Start Learning</a>
+              <a class="button button-secondary" href="./questions.html">Jump to Questions</a>
               <a class="button button-secondary" href="./raft-lab.html">Open Guided Lab</a>
             </div>
           </div>
@@ -89,6 +93,51 @@
       </header>
 
       <main>
+        <section class="section" id="pages">
+          <div class="section-heading">
+            <p class="kicker">Explore The Guide</p>
+            <h2>A cleaner multi-page path for learning Raft.</h2>
+            <p>
+              The full guide is now split into focused pages so readers can
+              learn one topic at a time instead of scrolling through everything
+              on one long page.
+            </p>
+          </div>
+
+          <div class="card-grid three-up">
+            <a class="page-card" href="./basics.html">
+              <span>01</span>
+              <h3>Basics & Formulas</h3>
+              <p>Roles, terms, quorum math, log matching, safety rules, and Raft vs Paxos.</p>
+            </a>
+            <a class="page-card" href="./diagrams.html">
+              <span>02</span>
+              <h3>Diagrams & Partitions</h3>
+              <p>Leader election, replication, failure handling, partitions, and Figure-8.</p>
+            </a>
+            <a class="page-card" href="./yugabyte.html">
+              <span>03</span>
+              <h3>YugabyteDB</h3>
+              <p>Tablet Raft groups, leader distribution, tuning, and production scenarios.</p>
+            </a>
+            <a class="page-card" href="./systems.html">
+              <span>04</span>
+              <h3>Real Systems</h3>
+              <p>etcd, Kubernetes, Consul, Nomad, rqlite, TiKV, Fabric, and more.</p>
+            </a>
+            <a class="page-card" href="./questions.html">
+              <span>05</span>
+              <h3>Q&A</h3>
+              <p>Scenario-based technical questions, operational answers, and interview prep.</p>
+            </a>
+            <a class="page-card" href="./raft-lab.html">
+              <span>06</span>
+              <h3>Raft Lab</h3>
+              <p>A guided interactive-style walkthrough for visual learners.</p>
+            </a>
+          </div>
+        </section>
+
         <section class="section accent-section" id="importance">
           <div class="section-heading">
             <p class="kicker">Why Raft Matters</p>
@@ -1188,5 +1237,7 @@
     </div>
 
     <script src="./script.js"></script>
+    <script src="./translate.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
   </body>
 </html>

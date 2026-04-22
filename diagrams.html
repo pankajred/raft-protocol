@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raft Diagrams & Partitions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <a class="brand" href="./index.html">Raft Field Guide</a>
+          <div class="topbar-links"><a href="./basics.html">Basics</a><a href="./diagrams.html">Diagrams</a><a href="./yugabyte.html">YugabyteDB</a><a href="./systems.html">Systems</a><a href="./questions.html">Q&amp;A</a><a href="./raft-lab.html">Raft Lab</a></div>
+          <div class="language-box"><span>Language</span><div id="google_translate_element"></div></div>
+        </nav>
+        <div class="section-heading page-hero-heading">
+          <p class="kicker">Diagrams</p>
+          <h1>Visual guide to election, replication, and network partitions.</h1>
+          <p>Use this page when you want to teach or troubleshoot the protocol visually.</p>
+        </div>
+      </header>
+
+      <main>
+        <section class="section accent-section">
+          <div class="diagram-stack">
+            <article class="diagram-card">
+              <div class="diagram-copy"><h3>Leader Election</h3><p>A follower misses heartbeats, becomes candidate, requests votes, and becomes leader only after quorum.</p></div>
+              <div class="diagram-sequence">
+                <div class="sequence-step warning"><span class="step-number">1</span><h4>Heartbeat missing</h4><p>Follower timeout fires.</p></div><div class="sequence-arrow">→</div>
+                <div class="sequence-step"><span class="step-number">2</span><h4>Candidate</h4><p>Term increases and self-vote happens.</p></div><div class="sequence-arrow">→</div>
+                <div class="sequence-step"><span class="step-number">3</span><h4>RequestVote</h4><p>Peers check term and log freshness.</p></div><div class="sequence-arrow">→</div>
+                <div class="sequence-step success"><span class="step-number">4</span><h4>Leader</h4><p>Majority votes elect the leader.</p></div>
+              </div>
+            </article>
+            <article class="diagram-card">
+              <div class="diagram-copy"><h3>Replication And Commit</h3><p>Commit happens after majority acknowledgment, not after the first copy.</p></div>
+              <div class="replication-board">
+                <div class="replication-lane"><div class="lane-label">Leader path</div><div class="lane-steps"><span class="lane-step active">Client write</span><span class="lane-step active">Append locally</span><span class="lane-step active">Send AppendEntries</span></div></div>
+                <div class="replication-lane"><div class="lane-label">Follower path</div><div class="lane-steps"><span class="lane-step">Check previous log</span><span class="lane-step">Append and ACK</span><span class="lane-step success">Majority ACK commits</span></div></div>
+              </div>
+            </article>
+            <article class="diagram-card">
+              <div class="diagram-copy"><h3>Failure Handling</h3><p>The majority side can keep working; the minority side cannot commit safely.</p></div>
+              <div class="failure-grid">
+                <div class="failure-panel minority"><h4>Minority</h4><p>Old leader may be alive but cannot gather quorum.</p><div class="failure-result danger-result">No safe commits</div></div>
+                <div class="failure-panel majority"><h4>Majority</h4><p>A new leader can be elected in a higher term.</p><div class="failure-result success-result">Writes can continue</div></div>
+                <div class="failure-panel recovery"><h4>Recovery</h4><p>Old leader steps down and uncommitted divergent entries are repaired.</p></div>
+              </div>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="./translate.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  </body>
+</html>

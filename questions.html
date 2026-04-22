@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raft Q&A</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <a class="brand" href="./index.html">Raft Field Guide</a>
+          <div class="topbar-links"><a href="./basics.html">Basics</a><a href="./diagrams.html">Diagrams</a><a href="./yugabyte.html">YugabyteDB</a><a href="./systems.html">Systems</a><a href="./questions.html">Q&amp;A</a><a href="./raft-lab.html">Raft Lab</a></div>
+          <div class="language-box"><span>Language</span><div id="google_translate_element"></div></div>
+        </nav>
+        <div class="section-heading page-hero-heading">
+          <p class="kicker">Q&amp;A</p>
+          <h1>Scenario-based Raft questions for deeper understanding.</h1>
+          <p>Use the category filters to focus on elections, deep technical behavior, YugabyteDB, operations, or management explanations.</p>
+        </div>
+      </header>
+      <main>
+        <section class="section accent-section" id="qa">
+          <div class="filter-bar">
+            <button class="filter-pill is-active" data-filter="all">All</button>
+            <button class="filter-pill" data-filter="fundamentals">Fundamentals</button>
+            <button class="filter-pill" data-filter="elections">Elections</button>
+            <button class="filter-pill" data-filter="deep-dive">Deep Dive</button>
+            <button class="filter-pill" data-filter="yugabyte">YugabyteDB</button>
+            <button class="filter-pill" data-filter="ops">Operations</button>
+            <button class="filter-pill" data-filter="management">Management</button>
+          </div>
+          <div class="faq-list">
+            <details class="faq-item" data-topic="elections"><summary>What exactly triggers a new election?</summary><p>A follower starts an election when it does not receive valid heartbeats or AppendEntries before its randomized election timeout expires.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>Why can a stale leader not safely keep writing?</summary><p>It cannot commit without majority. When it sees a higher term, it must step down.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>Why is replicated not the same as committed?</summary><p>Replication means copies exist. Commitment means the quorum rule makes the entry durable across future leaders.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>What is the Figure-8 safety lesson?</summary><p>Older-term entries can be widely replicated but still not safely committed without the current-term quorum rule.</p></details>
+            <details class="faq-item" data-topic="yugabyte"><summary>Why does tablet leader distribution matter?</summary><p>Leadership placement controls where write coordination lands. Skewed leaders create hotspots.</p></details>
+            <details class="faq-item" data-topic="ops"><summary>How do you troubleshoot leader churn?</summary><p>Check packet loss, CPU stalls, disk latency, heartbeat timing, overloaded RPC workers, and quorum health.</p></details>
+            <details class="faq-item" data-topic="management"><summary>How do you explain Raft to leadership?</summary><p>Raft gives the system one safe authority per replicated group and waits for a majority before confirming critical changes.</p></details>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="./script.js"></script>
+    <script src="./translate.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  </body>
+</html>

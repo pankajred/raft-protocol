@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YugabyteDB Raft Architecture</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <a class="brand" href="./index.html">Raft Field Guide</a>
+          <div class="topbar-links"><a href="./basics.html">Basics</a><a href="./diagrams.html">Diagrams</a><a href="./yugabyte.html">YugabyteDB</a><a href="./systems.html">Systems</a><a href="./questions.html">Q&amp;A</a><a href="./raft-lab.html">Raft Lab</a></div>
+          <div class="language-box"><span>Language</span><div id="google_translate_element"></div></div>
+        </nav>
+        <div class="section-heading page-hero-heading">
+          <p class="kicker">YugabyteDB</p>
+          <h1>Tablet Raft groups, leader distribution, and production behavior.</h1>
+          <p>YugabyteDB uses Raft per tablet, which means the database runs many Raft groups in parallel.</p>
+        </div>
+      </header>
+      <main>
+        <section class="section">
+          <div class="split-layout">
+            <article class="panel"><h3>Tablet Raft Groups</h3><p>Each tablet has a leader and followers. Writes for a tablet are coordinated by that tablet's leader, not by one global database leader.</p></article>
+            <article class="panel"><h3>Leader Distribution</h3><p>Balanced tablet leadership matters because leader-heavy nodes become write-coordination hotspots.</p></article>
+          </div>
+        </section>
+        <section class="section accent-section">
+          <div class="card-grid three-up">
+            <article class="info-card"><h3>Frequent Elections</h3><p>Check network loss, disk stalls, overloaded RPC threads, and CPU starvation.</p></article>
+            <article class="info-card"><h3>Follower Catch-up</h3><p>Lagging replicas catch up via log replay, snapshot, or remote-bootstrap style recovery depending on how far behind they are.</p></article>
+            <article class="info-card"><h3>Tuning Areas</h3><p>Heartbeat timing, election timeouts, placement policies, load balancing, WAL throughput, and compaction behavior matter most.</p></article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="./translate.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  </body>
+</html>

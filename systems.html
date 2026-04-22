@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Systems That Use Raft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <a class="brand" href="./index.html">Raft Field Guide</a>
+          <div class="topbar-links"><a href="./basics.html">Basics</a><a href="./diagrams.html">Diagrams</a><a href="./yugabyte.html">YugabyteDB</a><a href="./systems.html">Systems</a><a href="./questions.html">Q&amp;A</a><a href="./raft-lab.html">Raft Lab</a></div>
+          <div class="language-box"><span>Language</span><div id="google_translate_element"></div></div>
+        </nav>
+        <div class="section-heading page-hero-heading">
+          <p class="kicker">Real Systems</p>
+          <h1>How production tools apply Raft differently.</h1>
+          <p>These examples focus on Raft-specific operational questions, not generic project summaries.</p>
+        </div>
+      </header>
+      <main>
+        <section class="section accent-section">
+          <div class="systems-grid">
+            <article class="system-card"><h3><a href="https://github.com/etcd-io/etcd">etcd</a></h3><p class="system-question">Why does quorum loss threaten coordination?</p><p>Because safe metadata writes require a stable Raft leader and majority.</p></article>
+            <article class="system-card"><h3><a href="https://developer.hashicorp.com/consul/docs/concept/consensus">HashiCorp Consul</a></h3><p class="system-question">Why do Consul servers use odd counts?</p><p>Odd voter counts maximize failure tolerance and avoid unnecessary even-sized quorum overhead.</p></article>
+            <article class="system-card"><h3><a href="https://developer.hashicorp.com/nomad/docs/architecture/cluster/consensus">HashiCorp Nomad</a></h3><p class="system-question">What happens when server quorum is unstable?</p><p>Scheduling state cannot be committed reliably, so cluster control-plane progress suffers.</p></article>
+            <article class="system-card"><h3><a href="https://rqlite.io/docs/design/">rqlite</a></h3><p class="system-question">What does Raft add to SQLite?</p><p>A leader-based replicated write path with majority-backed commit.</p></article>
+            <article class="system-card"><h3><a href="https://www.yugabyte.com/key-concepts/raft-consensus-algorithm/">YugabyteDB</a></h3><p class="system-question">Why do tablet leaders matter?</p><p>Every tablet has its own Raft leader, so leader distribution controls write hotspots.</p></article>
+            <article class="system-card"><h3><a href="https://www.cockroachlabs.com/resources/the-raft-protocol-explained-via-sql-database-cockroachdb-consensus-protocol/">CockroachDB</a></h3><p class="system-question">Why many leaders?</p><p>Data ranges are replicated independently, so many Raft leaders provide horizontal scale.</p></article>
+            <article class="system-card"><h3><a href="https://docs.dgraph.io/design-concepts/raft/">Dgraph</a></h3><p class="system-question">What is the Raft lesson?</p><p>Distributed graph systems need group health and leadership awareness, not just node health.</p></article>
+            <article class="system-card"><h3><a href="https://tikv.org/docs/4.0/concepts/architecture/">TiKV</a></h3><p class="system-question">Why Regions and peers?</p><p>Each Region is a Raft group, so peers and leader placement explain write behavior.</p></article>
+            <article class="system-card"><h3><a href="https://github.com/moby/swarmkit">SwarmKit</a></h3><p class="system-question">Why manager quorum?</p><p>Managers maintain authoritative cluster state through Raft.</p></article>
+            <article class="system-card"><h3><a href="https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade-etcd/">Kubernetes via etcd</a></h3><p class="system-question">How does etcd become a Kubernetes issue?</p><p>etcd quorum or leader churn directly affects the API server's backing store.</p></article>
+            <article class="system-card"><h3><a href="https://hyperledger-fabric.readthedocs.io/en/latest/orderer/ordering_service.html">Hyperledger Fabric</a></h3><p class="system-question">Why per-channel Raft?</p><p>Separate Raft instances let each channel order blocks without one global ordering leader.</p></article>
+            <article class="system-card"><h3><a href="https://tikv.org/blog/implement-raft-in-rust/">TiKV Rust</a></h3><p class="system-question">Why Rust for Raft?</p><p>Consensus code sits on the write path, so memory safety and performance both matter.</p></article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="./translate.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  </body>
+</html>

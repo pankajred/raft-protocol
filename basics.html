@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Raft Basics & Formulas</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <nav class="topbar">
+          <a class="brand" href="./index.html">Raft Field Guide</a>
+          <div class="topbar-links">
+            <a href="./basics.html">Basics</a>
+            <a href="./diagrams.html">Diagrams</a>
+            <a href="./yugabyte.html">YugabyteDB</a>
+            <a href="./systems.html">Systems</a>
+            <a href="./questions.html">Q&amp;A</a>
+            <a href="./raft-lab.html">Raft Lab</a>
+          </div>
+          <div class="language-box"><span>Language</span><div id="google_translate_element"></div></div>
+        </nav>
+        <div class="section-heading page-hero-heading">
+          <p class="kicker">Basics</p>
+          <h1>Raft fundamentals, formulas, and safety rules.</h1>
+          <p>Start here for roles, terms, majority math, log matching, and the practical reason Raft is easier to explain than Paxos.</p>
+        </div>
+      </header>
+
+      <main>
+        <section class="section">
+          <div class="section-heading">
+            <p class="kicker">Core Model</p>
+            <h2>Raft turns consensus into understandable parts.</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card"><h3>Leader</h3><p>The leader receives writes, appends log entries, and asks followers to replicate them.</p></article>
+            <article class="info-card"><h3>Followers</h3><p>Followers accept valid leader messages and start elections only when heartbeats disappear.</p></article>
+            <article class="info-card"><h3>Terms</h3><p>Terms are logical epochs. Seeing a higher term forces stale leaders and candidates to step down.</p></article>
+          </div>
+        </section>
+
+        <section class="section accent-section">
+          <div class="section-heading">
+            <p class="kicker">Formulas</p>
+            <h2>The math behind quorum and failure tolerance.</h2>
+          </div>
+          <div class="card-grid three-up">
+            <article class="info-card formula-card"><h3>Quorum</h3><p class="formula-line">quorum = floor(N / 2) + 1</p><p>A majority must agree before the cluster can safely elect or commit.</p></article>
+            <article class="info-card formula-card"><h3>Failures</h3><p class="formula-line">f = floor((N - 1) / 2)</p><p>A 5-node cluster can tolerate 2 failed voting members and still keep quorum.</p></article>
+            <article class="info-card formula-card"><h3>Sizing</h3><p class="formula-line">N = 2f + 1</p><p>To tolerate f failures, use at least 2f + 1 voting members.</p></article>
+          </div>
+        </section>
+
+        <section class="section">
+          <div class="split-layout">
+            <article class="panel">
+              <h3>Log Matching Rules</h3>
+              <ul class="check-list">
+                <li>Followers reject AppendEntries if the previous index and term do not match.</li>
+                <li>Uncommitted divergent suffixes can be overwritten by the leader.</li>
+                <li>Committed entries must appear in future leaders.</li>
+              </ul>
+            </article>
+            <article class="panel">
+              <h3>Raft vs Paxos</h3>
+              <p>Raft is designed to be equivalent to Paxos in fault tolerance and performance goals, but decomposes consensus into leader election, log replication, and safety so teams can understand and implement it more easily.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script src="./translate.js"></script>
+    <script src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+  </body>
+</html>
