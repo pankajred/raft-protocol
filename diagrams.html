@@ -19,8 +19,8 @@
         </nav>
         <div class="section-heading page-hero-heading">
           <p class="kicker">Diagrams</p>
-          <h1>Visual guide to election, replication, and network partitions.</h1>
-          <p>Use this page when you want to teach or troubleshoot the protocol visually.</p>
+          <h1>Complete visual guide to elections, replication, and failure handling.</h1>
+          <p>Each diagram is designed to teach the decision point that matters: who has quorum, what is committed, and which node must step down.</p>
         </div>
       </header>
 
@@ -28,30 +28,52 @@
         <section class="section accent-section">
           <div class="diagram-stack">
             <article class="diagram-card">
-              <div class="diagram-copy"><h3>Leader Election</h3><p>A follower misses heartbeats, becomes candidate, requests votes, and becomes leader only after quorum.</p></div>
+              <div class="diagram-copy"><h3>Leader Election Flow</h3><p>One follower times out first, starts a new term, requests votes, and becomes leader only after majority approval.</p></div>
               <div class="diagram-sequence">
-                <div class="sequence-step warning"><span class="step-number">1</span><h4>Heartbeat missing</h4><p>Follower timeout fires.</p></div><div class="sequence-arrow">→</div>
-                <div class="sequence-step"><span class="step-number">2</span><h4>Candidate</h4><p>Term increases and self-vote happens.</p></div><div class="sequence-arrow">→</div>
-                <div class="sequence-step"><span class="step-number">3</span><h4>RequestVote</h4><p>Peers check term and log freshness.</p></div><div class="sequence-arrow">→</div>
-                <div class="sequence-step success"><span class="step-number">4</span><h4>Leader</h4><p>Majority votes elect the leader.</p></div>
+                <div class="sequence-step warning"><span class="step-number">1</span><h4>Heartbeat missing</h4><p>A follower stops hearing from the leader before its randomized timeout expires.</p></div><div class="sequence-arrow">→</div>
+                <div class="sequence-step"><span class="step-number">2</span><h4>Candidate</h4><p>The node increments the term, votes for itself, and starts an election.</p></div><div class="sequence-arrow">→</div>
+                <div class="sequence-step"><span class="step-number">3</span><h4>Vote check</h4><p>Peers check term and log freshness before voting.</p></div><div class="sequence-arrow">→</div>
+                <div class="sequence-step success"><span class="step-number">4</span><h4>Quorum</h4><p>Majority votes make the candidate leader. No majority means retry later.</p></div>
               </div>
+              <div class="cluster-explainer"><div class="cluster-column"><h4>Before election</h4><div class="explainer-nodes"><span class="explainer-node follower">A follower</span><span class="explainer-node follower">B follower</span><span class="explainer-node follower">C follower</span></div></div><div class="cluster-column"><h4>During election</h4><div class="explainer-nodes"><span class="explainer-node candidate">A candidate</span><span class="explainer-node follower">B voter</span><span class="explainer-node follower">C voter</span></div></div><div class="cluster-column"><h4>After quorum</h4><div class="explainer-nodes"><span class="explainer-node leader">A leader</span><span class="explainer-node follower">B follower</span><span class="explainer-node follower">C follower</span></div></div></div>
             </article>
+
             <article class="diagram-card">
-              <div class="diagram-copy"><h3>Replication And Commit</h3><p>Commit happens after majority acknowledgment, not after the first copy.</p></div>
+              <div class="diagram-copy"><h3>Replication And Commit Flow</h3><p>Replication creates copies. Commitment requires majority acknowledgment and is the safety boundary.</p></div>
               <div class="replication-board">
-                <div class="replication-lane"><div class="lane-label">Leader path</div><div class="lane-steps"><span class="lane-step active">Client write</span><span class="lane-step active">Append locally</span><span class="lane-step active">Send AppendEntries</span></div></div>
-                <div class="replication-lane"><div class="lane-label">Follower path</div><div class="lane-steps"><span class="lane-step">Check previous log</span><span class="lane-step">Append and ACK</span><span class="lane-step success">Majority ACK commits</span></div></div>
+                <div class="replication-lane"><div class="lane-label">Leader path</div><div class="lane-steps"><span class="lane-step active">1. Client sends write</span><span class="lane-step active">2. Leader appends entry</span><span class="lane-step active">3. Leader sends AppendEntries</span></div></div>
+                <div class="replication-lane"><div class="lane-label">Follower path</div><div class="lane-steps"><span class="lane-step">4. Followers check prevLogIndex / prevLogTerm</span><span class="lane-step">5. Matching followers append and ACK</span><span class="lane-step success">6. Majority ACK means commit</span></div></div>
+                <div class="commit-note">Important: replicated is not the same as committed. The leader can respond safely only after quorum is reached.</div>
               </div>
             </article>
+
             <article class="diagram-card">
-              <div class="diagram-copy"><h3>Failure Handling</h3><p>The majority side can keep working; the minority side cannot commit safely.</p></div>
+              <div class="diagram-copy"><h3>Network Partition And Recovery</h3><p>Raft chooses safety over unsafe availability when quorum is not reachable.</p></div>
               <div class="failure-grid">
-                <div class="failure-panel minority"><h4>Minority</h4><p>Old leader may be alive but cannot gather quorum.</p><div class="failure-result danger-result">No safe commits</div></div>
-                <div class="failure-panel majority"><h4>Majority</h4><p>A new leader can be elected in a higher term.</p><div class="failure-result success-result">Writes can continue</div></div>
-                <div class="failure-panel recovery"><h4>Recovery</h4><p>Old leader steps down and uncommitted divergent entries are repaired.</p></div>
+                <div class="failure-panel minority"><h4>Minority partition</h4><p>The old leader may still believe it is leader, but it cannot commit without quorum.</p><div class="failure-result danger-result">No safe commits</div></div>
+                <div class="failure-panel majority"><h4>Majority partition</h4><p>This side can elect a leader in a higher term and continue committing writes.</p><div class="failure-result success-result">Writes continue</div></div>
+                <div class="failure-panel recovery"><h4>After recovery</h4><p>The old leader sees the higher term, steps down, and uncommitted divergent entries are repaired.</p></div>
               </div>
             </article>
           </div>
+        </section>
+
+        <section class="section">
+          <div class="section-heading"><p class="kicker">Partition Scenarios</p><h2>What actually happens when the network gets weird.</h2><p>Progress depends on a majority being available. Safety does not depend on timing, but availability does.</p></div>
+          <div class="scenario-grid">
+            <article class="scenario-card"><h3>Leader isolated in minority partition</h3><p>The old leader cannot commit. The majority side can elect a new leader. Minority-only entries remain uncommitted and may be rolled back.</p></article>
+            <article class="scenario-card"><h3>Follower isolated</h3><p>The cluster remains available if the remaining nodes still form quorum. The isolated follower catches up later.</p></article>
+            <article class="scenario-card"><h3>Delayed heartbeats</h3><p>Packet loss or stalls can cause unnecessary elections and latency spikes even without a hard partition.</p></article>
+            <article class="scenario-card"><h3>Asymmetric partition</h3><p>Raft converges because terms and quorum depend on successful round trips, not one-way reachability.</p></article>
+            <article class="scenario-card"><h3>No side has quorum</h3><p>No leader can safely commit. Progress stops until quorum returns.</p></article>
+          </div>
+        </section>
+
+        <section class="section accent-section">
+          <article class="figure-eight panel">
+            <div class="figure-eight-copy"><p class="kicker">Figure-8 Raft Problem</p><h3>The famous Figure-8 safety scenario</h3><p>Figure-8 examples show why an older-term entry replicated to many nodes is not automatically committed. The current-term commit rule plus election restriction protects committed history across repeated leadership changes.</p></div>
+            <div class="figure-eight-visual"><div class="lane"><span>S1</span><span>S2</span><span>S3</span><span>S4</span><span>S5</span></div><div class="curve-band top"></div><div class="curve-band bottom"></div><div class="figure-note">Entries from old terms may spread widely, but only quorum-safe commitment protects history.</div></div>
+          </article>
         </section>
       </main>
     </div>

@@ -19,8 +19,8 @@
         </nav>
         <div class="section-heading page-hero-heading">
           <p class="kicker">Q&amp;A</p>
-          <h1>Scenario-based Raft questions for deeper understanding.</h1>
-          <p>Use the category filters to focus on elections, deep technical behavior, YugabyteDB, operations, or management explanations.</p>
+          <h1>Complete Raft questions for scenarios, operations, and interviews.</h1>
+          <p>This page preserves the detailed Q&A from the original guide and keeps it organized by topic.</p>
         </div>
       </header>
       <main>
@@ -35,13 +35,61 @@
             <button class="filter-pill" data-filter="management">Management</button>
           </div>
           <div class="faq-list">
-            <details class="faq-item" data-topic="elections"><summary>What exactly triggers a new election?</summary><p>A follower starts an election when it does not receive valid heartbeats or AppendEntries before its randomized election timeout expires.</p></details>
-            <details class="faq-item" data-topic="elections"><summary>Why can a stale leader not safely keep writing?</summary><p>It cannot commit without majority. When it sees a higher term, it must step down.</p></details>
-            <details class="faq-item" data-topic="deep-dive"><summary>Why is replicated not the same as committed?</summary><p>Replication means copies exist. Commitment means the quorum rule makes the entry durable across future leaders.</p></details>
-            <details class="faq-item" data-topic="deep-dive"><summary>What is the Figure-8 safety lesson?</summary><p>Older-term entries can be widely replicated but still not safely committed without the current-term quorum rule.</p></details>
-            <details class="faq-item" data-topic="yugabyte"><summary>Why does tablet leader distribution matter?</summary><p>Leadership placement controls where write coordination lands. Skewed leaders create hotspots.</p></details>
-            <details class="faq-item" data-topic="ops"><summary>How do you troubleshoot leader churn?</summary><p>Check packet loss, CPU stalls, disk latency, heartbeat timing, overloaded RPC workers, and quorum health.</p></details>
-            <details class="faq-item" data-topic="management"><summary>How do you explain Raft to leadership?</summary><p>Raft gives the system one safe authority per replicated group and waits for a majority before confirming critical changes.</p></details>
+            <details class="faq-item" data-topic="fundamentals"><summary>What problem does Raft solve?</summary><p>Raft solves distributed consensus: how multiple servers agree on the same ordered history of commands even when machines fail or messages are delayed.</p></details>
+            <details class="faq-item" data-topic="fundamentals"><summary>Why does Raft need a leader?</summary><p>A leader simplifies write ordering. Clients send writes to one authority, which reduces ambiguity and makes log replication easier to reason about.</p></details>
+            <details class="faq-item" data-topic="fundamentals"><summary>How is a leader elected?</summary><p>When followers stop hearing heartbeats, one times out, becomes a candidate, increments its term, and asks peers for votes. A majority makes it leader.</p></details>
+            <details class="faq-item" data-topic="fundamentals"><summary>Why are election timeouts randomized?</summary><p>Randomization reduces the chance that multiple followers become candidates simultaneously and repeatedly split the vote.</p></details>
+            <details class="faq-item" data-topic="fundamentals"><summary>What is the difference between committed and replicated?</summary><p>Replicated means followers have received the entry. Committed means Raft guarantees the entry will survive future leadership changes and can be safely applied.</p></details>
+            <details class="faq-item" data-topic="fundamentals"><summary>What are the main formulas to remember in Raft?</summary><p>quorum = floor(N/2) + 1, failure tolerance f = floor((N - 1)/2), and cluster size N = 2f + 1.</p></details>
+            <details class="faq-item" data-topic="fundamentals"><summary>Which open source systems use Raft in production?</summary><p>Examples include etcd, Consul, Nomad, rqlite, YugabyteDB, CockroachDB, Dgraph, TiKV, SwarmKit, Kubernetes through etcd, and Hyperledger Fabric's Raft ordering service.</p></details>
+
+            <details class="faq-item" data-topic="elections"><summary>What exactly triggers a new election?</summary><p>A follower starts an election when it does not receive a valid heartbeat or AppendEntries before its randomized election timeout expires.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What does a follower do when its election timeout fires?</summary><p>It increments its term, transitions to candidate, votes for itself, resets its election timer, and sends RequestVote RPCs.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>Can a follower vote for more than one candidate in the same term?</summary><p>No. A server grants at most one vote per term.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>How does a candidate become leader?</summary><p>It becomes leader only after receiving votes from a majority of the current configuration.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What if two candidates start an election at the same time?</summary><p>They can split the vote. Randomized timeouts make one retry later and usually break the tie.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What happens if a candidate loses the election?</summary><p>If it sees a valid leader or higher term, it steps down. If nobody wins, it may retry after another timeout.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>How does a stale leader get forced to step down?</summary><p>If it receives an RPC with a higher term, it updates its term and becomes a follower.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>Can there be two leaders at once?</summary><p>Two nodes may temporarily believe they are leader, but only a side with quorum can commit writes. The stale leader steps down after seeing a higher term.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>Why does log freshness matter during voting?</summary><p>Voters reject candidates whose logs are less up to date, helping preserve committed entries.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What if a node has the highest term but a stale log?</summary><p>Highest term alone is not enough. The candidate still must pass the up-to-date log check.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What happens if the leader is isolated with only one follower in a five-node cluster?</summary><p>That side has only 2 of 5 nodes and cannot commit. The 3-node majority side can elect a new leader.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What happens to client writes during an election?</summary><p>Writes may stall or retry until a leader is elected.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>Can a candidate append new log entries before winning?</summary><p>No. It must win leadership before accepting and replicating new client commands.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What if a candidate receives AppendEntries from a valid leader?</summary><p>It steps down to follower if the leader's term is current or higher.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>How do heartbeats relate to leader election?</summary><p>Heartbeats are empty AppendEntries messages that prevent followers from starting elections.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What happens if heartbeats are delayed but the leader is alive?</summary><p>Followers may start unnecessary elections, causing leader churn and latency spikes.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What if a follower restarts during an election?</summary><p>It returns as a follower with persisted term and vote state, then participates based on the latest term it observes.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What if no node can get a majority?</summary><p>The cluster cannot elect a leader and becomes unavailable for new writes until quorum returns.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>How do even-numbered clusters affect elections?</summary><p>They add cost without improving failure tolerance compared with the next lower odd number and can make ties more likely.</p></details>
+            <details class="faq-item" data-topic="elections"><summary>What are the most important election edge cases?</summary><p>Split votes, stale leaders after partition heal, delayed RPCs from old terms, candidates with stale logs, repeated timeouts, and rejoining nodes seeing higher terms.</p></details>
+
+            <details class="faq-item" data-topic="deep-dive"><summary>How do log matching rules prevent divergence?</summary><p>Followers only accept new entries if the preceding index and term match their local log.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>What is the election restriction?</summary><p>A candidate must be at least as up to date as the voter to receive a vote.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>What makes the Figure-8 scenario famous?</summary><p>It shows that older-term entries replicated to many nodes are not automatically committed without the correct current-term commit rule.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>Can Raft have split-brain?</summary><p>It can have temporary leader confusion, but not two conflicting committed histories if quorum rules are followed.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>What are important Raft edge cases?</summary><p>Split votes, stale leaders, uncommitted log tails, snapshots, membership changes, and delayed messages.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>How does Raft recover a follower that is far behind?</summary><p>The leader may replay logs or install a snapshot if the missing log range has been compacted.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>How does Raft change cluster membership safely?</summary><p>Through joint consensus, requiring overlapping majorities from old and new configurations during transition.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>Why is log compaction part of the real story?</summary><p>Snapshots keep logs from growing forever and allow far-behind followers to catch up efficiently.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>How should I read a leader-election diagram?</summary><p>Follow missing heartbeat, timeout, candidate transition, RequestVote, and majority decision.</p></details>
+            <details class="faq-item" data-topic="deep-dive"><summary>How should I read a replication diagram?</summary><p>Track the entry from client to leader log, then to followers, then to majority acknowledgment and commit.</p></details>
+
+            <details class="faq-item" data-topic="yugabyte"><summary>How does YugabyteDB use Raft?</summary><p>Each tablet has its own Raft group, leader, WAL, and followers.</p></details>
+            <details class="faq-item" data-topic="yugabyte"><summary>What are tablet leaders in YugabyteDB?</summary><p>They coordinate writes and replication for one shard of data.</p></details>
+            <details class="faq-item" data-topic="yugabyte"><summary>Why does tablet leader distribution matter?</summary><p>Uneven leadership creates hotspots and poor cluster utilization.</p></details>
+            <details class="faq-item" data-topic="yugabyte"><summary>Which Yugabyte tuning areas usually matter?</summary><p>Election timing, heartbeat timing, load balancing, placement, RPC pressure, WAL throughput, compaction, and remote bootstrap behavior.</p></details>
+            <details class="faq-item" data-topic="yugabyte"><summary>Does YugabyteDB use plain textbook Raft?</summary><p>It is based on production Raft ideas and includes implementation-specific enhancements such as leases and pre-voting behavior.</p></details>
+            <details class="faq-item" data-topic="yugabyte"><summary>How can you inspect tablet leadership?</summary><p>Use cluster UI and metadata views such as yb_tablet_metadata to inspect placement and leadership.</p></details>
+
+            <details class="faq-item" data-topic="ops"><summary>What symptoms suggest Raft instability?</summary><p>Frequent leader changes, high write tail latency, follower lag, under-replicated tablets, queue growth, and vote bursts.</p></details>
+            <details class="faq-item" data-topic="ops"><summary>How do you troubleshoot repeated elections?</summary><p>Check packet loss, CPU stalls, disk latency, RPC overload, heartbeat tuning, and intermittent isolation.</p></details>
+            <details class="faq-item" data-topic="ops"><summary>What production failure scenarios are realistic?</summary><p>Zone partition, noisy-neighbor CPU starvation, slow fsync, leader concentration, and follower catch-up after outage.</p></details>
+            <details class="faq-item" data-topic="ops"><summary>What operational checklist is useful?</summary><p>Check quorum, leader churn, packet loss, disk latency, CPU starvation, follower lag, leases, and failure-domain placement.</p></details>
+
+            <details class="faq-item" data-topic="management"><summary>How do you explain Raft to leadership?</summary><p>Raft picks one safe authority per replicated group and waits for a majority before confirming important changes.</p></details>
+            <details class="faq-item" data-topic="management"><summary>What are management talking points?</summary><p>Predictable failover, strong consistency, controlled fault tolerance, operational clarity, and lower corruption risk.</p></details>
+            <details class="faq-item" data-topic="management"><summary>Why is Raft important to management?</summary><p>It adds coordination cost but greatly improves correctness, failover predictability, and confidence during infrastructure failures.</p></details>
           </div>
         </section>
       </main>
